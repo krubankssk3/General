@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เข้าสู่ระบบ — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .split { display:grid; grid-template-columns: 1.05fr .95fr; min-height: 560px; }
+  .aside { background: var(--ink); color:#EDEAF7; padding: 46px 40px; display:flex; flex-direction:column; justify-content:space-between; }
+  .aside h2 { color:#fff; font-size:1.75rem; }
+  .stripe { height:14px; background: repeating-linear-gradient(45deg,#5B3FD6 0 10px,#3A2F5C 10px 20px); margin-bottom:30px; }
+  .role { border:1px solid var(--rule); border-radius:3px; padding:11px 13px; cursor:pointer; text-align:left; background:var(--card); font-family:'Bai Jamjuree',sans-serif; font-size:.83rem; font-weight:500; color:var(--ink); transition:border-color .15s,background .15s; }
+  .role:hover { border-color: var(--violet); }
+  .role.on { border-color: var(--violet); background: var(--violet-soft); }
+  .role span { display:block; font-family:'IBM Plex Sans Thai',sans-serif; font-weight:300; font-size:.74rem; color:var(--ink-faint); }
+  @media (max-width:820px){ .split { grid-template-columns:1fr; } .aside { padding:32px 22px; } }
+</style>
+</head>
+<body data-page="login.html" data-title="การเลือกตั้งสภานักเรียน ปีการศึกษา 2569" data-sub="โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3" data-doc="ระบบภายใน<br>เฉพาะเจ้าหน้าที่">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+<div class="wrap">
+<div class="sheet" style="padding:0">
+  <div class="split">
+
+    <div class="aside reveal">
+      <div>
+        <div class="stripe"></div>
+        <span class="eyebrow" style="color:#A594F0">ระบบภายใน</span>
+        <h2>เข้าสู่ระบบเพื่อปฏิบัติหน้าที่</h2>
+        <p style="color:#B9B1D8;max-width:40ch;margin-top:10px">หน้านี้สำหรับครูผู้ดูแลระบบ กรรมการประจำหน่วยเลือกตั้ง และผู้สังเกตการณ์เท่านั้น นักเรียนที่มาใช้สิทธิ์ไม่ต้องเข้าสู่ระบบ ให้ยื่นบัตรที่โต๊ะกรรมการได้เลย</p>
+      </div>
+      <div style="border-top:1px solid #3A2F5C;padding-top:18px;margin-top:30px">
+        <p class="mono" style="color:#8C82B8;font-size:.72rem">ทุกครั้งที่เข้าสู่ระบบจะถูกบันทึกลงสมุดตรวจสอบ พร้อมเวลาและอุปกรณ์ที่ใช้</p>
+      </div>
+    </div>
+
+    <div class="reveal" style="padding:46px 40px;--d:.12s">
+      <h3 style="font-size:1.2rem;margin-bottom:4px">เลือกบทบาทของคุณ</h3>
+      <p class="muted" style="margin-bottom:18px">แต่ละบทบาทเห็นและทำได้ไม่เท่ากัน</p>
+
+      <div class="grid g3" style="gap:10px;margin-bottom:26px" id="roles">
+        <button class="role on" data-r="admin">ผู้ดูแลระบบ<span>ครูผู้รับผิดชอบ</span></button>
+        <button class="role" data-r="staff">กรรมการหน่วย<span>ประจำคูหา</span></button>
+        <button class="role" data-r="observe">ผู้สังเกตการณ์<span>ดูอย่างเดียว</span></button>
+      </div>
+
+      <div class="field">
+        <label for="u">ชื่อผู้ใช้</label>
+        <input id="u" type="text" value="krubank" autocomplete="username">
+      </div>
+
+      <div class="field">
+        <label for="p">รหัสผ่าน</label>
+        <input id="p" type="password" value="" placeholder="กรอกรหัสผ่าน" autocomplete="current-password">
+      </div>
+
+      <button class="btn primary wide" id="go" style="margin-top:6px">เข้าสู่ระบบ</button>
+
+      <p class="mono" style="margin-top:20px;color:var(--ink-faint);line-height:1.9">
+        หน้าสาธิต — รหัสผ่านทดลองคือ 1234<br>
+        ของจริงเก็บเป็นค่าแฮชในชีต Committee ไม่เก็บรหัสจริง
+      </p>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div class="foot">
+  พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3
+</div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+var role = 'admin';
+var btns = document.querySelectorAll('#roles .role');
+
+for (var i = 0; i < btns.length; i++) {
+  btns[i].onclick = function () {
+    for (var k = 0; k < btns.length; k++) { btns[k].classList.remove('on'); }
+    this.classList.add('on');
+    role = this.getAttribute('data-r');
+    document.getElementById('u').value =
+      role === 'admin' ? 'krubank' : (role === 'staff' ? 'unit01' : 'observer');
+  };
+}
+
+/* เข้าสู่ระบบด้วยข้อมูลจริงจาก backend
+   จุดสำคัญ: หน้าไหนที่ผู้ใช้พิมพ์บทบาทเองไม่ได้ backend เป็นผู้กำหนดบทบาทจาก username/password
+   ปุ่มเลือกบทบาทด้านบนเป็นแค่ตัวช่วยเติม username ให้เร็วขึ้นเท่านั้น */
+var DEST = { admin: 'admin.html', staff: 'booth.html', observe: 'admin.html' };
+var LABEL = { admin: 'ผู้ดูแลระบบ', staff: 'กรรมการประจำหน่วย', observe: 'ผู้สังเกตการณ์' };
+
+function doLogin() {
+  var btn = document.getElementById('go');
+  var u = document.getElementById('u').value.trim();
+  var p = document.getElementById('p').value;
+
+  if (!u || !p) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'กรอกไม่ครบ',
+      text: 'ต้องกรอกทั้งชื่อผู้ใช้และรหัสผ่านก่อนเข้าสู่ระบบ',
+      confirmButtonText: 'กลับไปกรอก'
+    });
+    return;
+  }
+
+  if (!lockBtn(btn, 'กำลังตรวจสอบ…')) { return; }
+
+  Swal.fire({
+    title: 'กำลังเข้าสู่ระบบ',
+    html: 'กำลังตรวจสอบสิทธิ์กับเซิร์ฟเวอร์',
+    allowOutsideClick: false,
+    didOpen: function () { Swal.showLoading(); }
+  });
+
+  API.call('login', { username: u, password: p }, function (data) {
+    Session.set(data.token);
+    var dest = DEST[data.role] || 'index.html';
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ยินดีต้อนรับ',
+      html: 'เข้าสู่ระบบในบทบาท <b>' + (LABEL[data.role] || data.role) + '</b>',
+      timer: 1400,
+      showConfirmButton: false
+    }).then(function () { window.location.href = dest; });
+
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({
+      icon: 'error',
+      title: 'เข้าสู่ระบบไม่สำเร็จ',
+      html: msg + '<br><span class="mono" style="color:#8B849F">หากลืมรหัสผ่านให้ติดต่อครูผู้ดูแลระบบ</span>',
+      confirmButtonText: 'ลองใหม่'
+    });
+  });
+}
+
+document.getElementById('go').onclick = doLogin;
+document.getElementById('p').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { doLogin(); }
+});
+
+/* ถ้าล็อกอินค้างอยู่แล้ว ถามว่าจะไปต่อหรือเข้าใหม่ */
+if (Session.get()) {
+  API.call('ping', {}, function () {}, function () { Session.clear(); });
+}
+</script>
+</script>
+</body>
+</html>
