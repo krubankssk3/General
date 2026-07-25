@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>จอแสดงผลสด — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .top { max-width:1240px; margin:0 auto; padding:22px 28px; display:flex; align-items:center; gap:14px; border-bottom:1px solid #3A2F5C; }
+  .top img { width:44px; height:44px; }
+  .top h1 { font-family:'Bai Jamjuree',sans-serif; font-size:1.1rem; font-weight:600; color:#fff; }
+  .top .sub { font-size:.76rem; color:#8C82B8; }
+  .liveflag { margin-left:auto; display:flex; align-items:center; gap:9px; font-family:'Bai Jamjuree',sans-serif; font-size:.85rem; color:#FF7A8A; }
+  .liveflag i { width:9px; height:9px; border-radius:50%; background:#FF4D63; animation:pulse 1.4s infinite; }
+  .board { max-width:1240px; margin:0 auto; padding:34px 28px 60px; }
+  .hero { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; padding-bottom:34px; border-bottom:1px solid #3A2F5C; }
+  .huge { font-family:'Bai Jamjuree',sans-serif; font-weight:700; font-size:clamp(4.5rem,13vw,9rem); line-height:.94; color:#fff; font-variant-numeric:tabular-nums; }
+  .huge em { font-style:normal; color:#8C82B8; font-size:.3em; font-weight:500; }
+  .kicker { font-family:'IBM Plex Mono',monospace; font-size:.76rem; letter-spacing:.2em; text-transform:uppercase; color:#A594F0; }
+  .ring { display:flex; align-items:center; gap:22px; }
+  .ring svg { flex:none; }
+  .clsbar { display:grid; grid-template-columns:58px 1fr 62px; align-items:center; gap:14px; margin-bottom:11px; }
+  .clsbar b { font-family:'Bai Jamjuree',sans-serif; font-size:.92rem; font-weight:500; color:#C9C2E4; }
+  .clsbar .t { height:16px; background:#241C3B; border:1px solid #3A2F5C; overflow:hidden; }
+  .clsbar .t i { display:block; height:100%; background:linear-gradient(90deg,#5B3FD6,#8B6BF5); transition:width 1.2s cubic-bezier(.16,1,.3,1); }
+  .clsbar .p { font-family:'IBM Plex Mono',monospace; font-size:.82rem; text-align:right; color:#8C82B8; }
+  .clsbar.lead .p { color:#5FE0B0; }
+  .clsbar.lead b { color:#fff; }
+  .panel { padding:32px 0; border-bottom:1px solid #3A2F5C; }
+  .panel h2 { color:#fff; font-size:1.15rem; }
+  .cnd { display:grid; grid-template-columns:78px 1fr 130px; align-items:center; gap:20px; padding:18px 0; border-bottom:1px solid #2E2549; }
+  .cnd .bignum { font-family:'Bai Jamjuree',sans-serif; font-size:2.4rem; font-weight:700; color:#fff; text-align:center; border:2px solid #5B3FD6; }
+  .cnd .nm { font-family:'Bai Jamjuree',sans-serif; font-size:1.15rem; font-weight:600; color:#fff; margin-bottom:7px; }
+  .cnd .t { height:22px; background:#241C3B; border:1px solid #3A2F5C; overflow:hidden; }
+  .cnd .t i { display:block; height:100%; background:linear-gradient(90deg,#5B3FD6,#B39CFF); transition:width 1.4s cubic-bezier(.16,1,.3,1); }
+  .cnd .sc { font-family:'Bai Jamjuree',sans-serif; font-size:1.9rem; font-weight:700; color:#fff; text-align:right; font-variant-numeric:tabular-nums; }
+  .locked { border:1px dashed #4A3F76; padding:44px 30px; text-align:center; color:#8C82B8; }
+  .ticker { position:fixed; left:0; right:0; bottom:0; background:#5B3FD6; color:#fff; font-family:'Bai Jamjuree',sans-serif; font-size:.88rem; padding:11px 28px; white-space:nowrap; overflow:hidden; }
+  .ticker span { display:inline-block; animation:slide 26s linear infinite; }
+  @keyframes slide { from{ transform:translateX(100%) } to{ transform:translateX(-100%) } }
+  @media (max-width:900px){ .hero { grid-template-columns:1fr; gap:24px; } .cnd { grid-template-columns:56px 1fr 92px; gap:12px; } }
+</style>
+</head>
+<body class="screen">
+
+<div class="top">
+  <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียนบ้านละลม">
+  <div>
+    <h1>เลือกตั้งสภานักเรียน ปีการศึกษา 2569</h1>
+    <div class="sub">โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  </div>
+  <div class="liveflag"><i></i> ถ่ายทอดสด · ปิดหีบใน <b class="mono" id="cd">--:--:--</b></div>
+</div>
+
+<div class="board">
+
+  <div class="hero reveal">
+    <div>
+      <div class="kicker">ผู้มาใช้สิทธิ์ขณะนี้</div>
+      <div class="huge"><span id="big">0</span><em> / 412 คน</em></div>
+      <p style="color:#B9B1D8;margin-top:12px">ตัวเลขปรับทุก 5 วินาที ระหว่างเปิดหีบจอนี้แสดงเฉพาะจำนวนผู้มาใช้สิทธิ์</p>
+    </div>
+    <div class="ring">
+      <svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="สัดส่วนผู้มาใช้สิทธิ์">
+        <circle cx="75" cy="75" r="64" fill="none" stroke="#3A2F5C" stroke-width="14"/>
+        <circle id="arc" cx="75" cy="75" r="64" fill="none" stroke="#5B3FD6" stroke-width="14" stroke-linecap="round"
+                stroke-dasharray="402" stroke-dashoffset="402" transform="rotate(-90 75 75)"
+                style="transition:stroke-dashoffset 1.6s cubic-bezier(.16,1,.3,1)"/>
+      </svg>
+      <div>
+        <div class="kicker">คิดเป็น</div>
+        <div style="font-family:'Bai Jamjuree',sans-serif;font-size:3rem;font-weight:700;color:#fff;line-height:1.1"><span id="pc">0</span>%</div>
+        <div style="color:#8C82B8;font-size:.85rem">ของผู้มีสิทธิ์ทั้งหมด</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <h2 style="margin-bottom:20px">ชั้นไหนมาใช้สิทธิ์ครบก่อน</h2>
+    <div id="classes"></div>
+  </div>
+
+  <div class="panel reveal">
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:20px">
+      <h2>ผลคะแนน</h2>
+      <button class="btn primary" id="toggle" style="margin-left:auto">ดูมุมมองหลังปิดหีบ</button>
+    </div>
+
+    <div id="locked" class="locked">
+      <div class="kicker" style="margin-bottom:10px">ยังไม่เปิดเผย</div>
+      <p style="max-width:52ch;margin:0 auto">คะแนนรายหมายเลขจะแสดงบนจอนี้หลังปิดหีบเท่านั้น เพื่อไม่ให้ผลระหว่างทางไปมีอิทธิพลต่อนักเรียนที่ยังไม่ได้ลงคะแนน</p>
+    </div>
+
+    <div id="results" style="display:none"></div>
+  </div>
+
+</div>
+
+<div class="ticker"><span>ปิดหีบเวลา 14.30 น. · นักเรียนที่ยังไม่ได้ใช้สิทธิ์ให้มาที่อาคารอเนกประสงค์ · นำบัตรประจำตัวนักเรียนมาด้วยทุกครั้ง · ประกาศผลอย่างเป็นทางการเวลา 15.00 น. หน้าเสาธง · พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ครูโรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+var TOTAL = 412;
+var voted = 268;
+
+var classes = [
+  { n: 'ป.1', v: 31, t: 38 }, { n: 'ป.2', v: 34, t: 41 }, { n: 'ป.3', v: 29, t: 44 },
+  { n: 'ป.4', v: 40, t: 46 }, { n: 'ป.5', v: 26, t: 43 }, { n: 'ป.6', v: 33, t: 48 },
+  { n: 'ม.1', v: 27, t: 52 }, { n: 'ม.2', v: 30, t: 51 }, { n: 'ม.3', v: 18, t: 49 }
+];
+
+var box = document.getElementById('classes');
+var best = 0;
+var i;
+
+for (i = 0; i < classes.length; i++) {
+  var p = Math.round(classes[i].v / classes[i].t * 100);
+  if (p > best) { best = p; }
+}
+
+for (i = 0; i < classes.length; i++) {
+  var pct = Math.round(classes[i].v / classes[i].t * 100);
+  var div = document.createElement('div');
+  div.className = 'clsbar' + (pct === best ? ' lead' : '');
+  div.innerHTML = '<b>' + classes[i].n + '</b><div class="t"><i style="width:0"></i></div><div class="p">' + pct + '%</div>';
+  box.appendChild(div);
+  (function (el, w) {
+    setTimeout(function () { el.querySelector('.t i').style.width = w + '%'; }, 400 + Math.random() * 500);
+  })(div, pct);
+}
+
+function paint() {
+  var pct = Math.round(voted / TOTAL * 100);
+  document.getElementById('pc').textContent = pct;
+  document.getElementById('arc').style.strokeDashoffset = String(402 - 402 * pct / 100);
+}
+
+setTimeout(function () {
+  countUp(document.getElementById('big'), voted, 1500);
+  paint();
+}, 400);
+
+/* จำลองคะแนนไหลเข้าแบบสด — ของจริงดึงจาก CacheService ทุก 5 วินาที */
+setInterval(function () {
+  if (voted >= TOTAL) { return; }
+  voted += Math.floor(Math.random() * 3);
+  document.getElementById('big').textContent = fmt(voted);
+  paint();
+}, 5000);
+
+/* นับถอยหลัง */
+var end = new Date().getTime() + (2 * 3600 + 41 * 60 + 8) * 1000;
+setInterval(function () {
+  var s = Math.floor(Math.max(0, end - new Date().getTime()) / 1000);
+  document.getElementById('cd').textContent =
+    pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
+}, 1000);
+
+/* สลับมุมมองหลังปิดหีบ */
+var open = false;
+var scores = [
+  { no: 1, nm: 'ละลมก้าวหน้า', s: 118 },
+  { no: 2, nm: 'รวมใจบ้านละลม', s: 96 },
+  { no: 3, nm: 'เพื่อนพัฒนา', s: 47 },
+  { no: 0, nm: 'ไม่ประสงค์ลงคะแนน', s: 7 }
+];
+
+document.getElementById('toggle').onclick = function () {
+  open = !open;
+  this.textContent = open ? 'กลับมุมมองระหว่างเปิดหีบ' : 'ดูมุมมองหลังปิดหีบ';
+  document.getElementById('locked').style.display = open ? 'none' : 'block';
+  var box2 = document.getElementById('results');
+  box2.style.display = open ? 'block' : 'none';
+  if (!open) { return; }
+
+  var max = scores[0].s;
+  var html = '';
+  for (var k = 0; k < scores.length; k++) {
+    html += '<div class="cnd"><div class="bignum"' + (scores[k].no === 0 ? ' style="border-style:dashed;font-size:1.4rem;line-height:1.9"' : '') + '>' +
+            (scores[k].no === 0 ? '—' : scores[k].no) + '</div>' +
+            '<div><div class="nm">' + scores[k].nm + '</div><div class="t"><i data-w="' + Math.round(scores[k].s / max * 100) + '" style="width:0"></i></div></div>' +
+            '<div class="sc">' + scores[k].s + '</div></div>';
+  }
+  box2.innerHTML = html;
+
+  var bars = box2.querySelectorAll('.t i');
+  for (var j = 0; j < bars.length; j++) {
+    (function (b) {
+      setTimeout(function () { b.style.width = b.getAttribute('data-w') + '%'; }, 120);
+    })(bars[j]);
+  }
+
+  Swal.fire({
+    icon: 'info',
+    title: 'นี่คือมุมมองหลังปิดหีบ',
+    html: 'ของจริงหน้านี้จะสลับเองอัตโนมัติเมื่อผู้ดูแลระบบกดปิดหีบ ไม่มีใครเปิดดูก่อนได้',
+    confirmButtonText: 'เข้าใจแล้ว'
+  });
+};
+</script>
+</body>
+</html>

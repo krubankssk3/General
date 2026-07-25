@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>บัตรลงคะแนน — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .paper { max-width:720px; margin:0 auto; }
+  .clock { display:flex; justify-content:space-between; align-items:center; border:1px solid var(--rule); background:var(--violet-soft); padding:11px 16px; margin-bottom:20px; }
+  .clock .mono { font-size:.92rem; color:var(--violet); }
+  .row .name { font-family:'Bai Jamjuree',sans-serif; font-size:1.05rem; font-weight:600; }
+  .row .lead2 { font-size:.82rem; color:var(--ink-faint); }
+  .receipt { border:2px solid var(--verify); background:var(--card); padding:30px; text-align:center; }
+  .thumb { width:74px; height:74px; margin:0 auto 16px; border-radius:50%; background:var(--violet); position:relative; }
+  .thumb::after { content:''; position:absolute; inset:14px; border:3px solid rgba(255,255,255,.55); border-radius:50%; border-bottom-color:transparent; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; text-align:left; margin-top:20px; padding-top:18px; border-top:1px solid var(--rule); }
+  .kv dt { font-family:'Bai Jamjuree',sans-serif; font-size:.8rem; font-weight:500; color:var(--ink-faint); white-space:nowrap; }
+  .kv dd { font-family:'IBM Plex Mono',monospace; font-size:.78rem; word-break:break-all; }
+</style>
+</head>
+<body data-page="vote.html" data-title="บัตรลงคะแนนเลือกตั้งสภานักเรียน" data-sub="ปีการศึกษา 2569 · หน่วยเลือกตั้งที่ 1" data-doc="บัตรใบนี้ไม่บันทึก<br>ชื่อผู้ลงคะแนน">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+<div class="wrap">
+<div class="sheet">
+  <section style="padding-top:30px">
+    <div class="paper" id="paper">
+
+      <div class="clock reveal">
+        <span style="font-size:.85rem">รหัสเข้าคูหา <b class="mono" id="tok"></b></span>
+        <span class="mono">เหลือเวลา <b id="left">03:00</b></span>
+      </div>
+
+      <div class="reveal" style="--d:.08s">
+        <h2>กาเครื่องหมายในช่องเดียวเท่านั้น</h2>
+        <p class="lead">แตะที่แถวของหมายเลขที่ต้องการ ระบบจะกาให้อัตโนมัติ เปลี่ยนใจได้จนกว่าจะกดยืนยัน</p>
+      </div>
+
+      <div class="ballot reveal" style="margin-top:22px;--d:.16s" id="ballot">
+        <div class="ballot-head">บัตรเลือกตั้งสภานักเรียน · เลือกได้หนึ่งหมายเลข</div>
+
+        <div class="row" data-v="1" tabindex="0" role="button">
+          <div class="no">1</div>
+          <div><div class="name">ละลมก้าวหน้า</div><div class="lead2">หัวหน้าทีม ปาลิตา · ม.3/1</div></div>
+          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
+        </div>
+
+        <div class="row" data-v="2" tabindex="0" role="button">
+          <div class="no">2</div>
+          <div><div class="name">รวมใจบ้านละลม</div><div class="lead2">หัวหน้าทีม ธนกฤต · ม.2/2</div></div>
+          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
+        </div>
+
+        <div class="row" data-v="3" tabindex="0" role="button">
+          <div class="no">3</div>
+          <div><div class="name">เพื่อนพัฒนา</div><div class="lead2">หัวหน้าทีม ณิชาภัทร · ม.3/2</div></div>
+          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
+        </div>
+
+        <div class="row" data-v="0" tabindex="0" role="button" style="background:var(--paper)">
+          <div class="no" style="border-style:dashed;font-size:1.2rem;line-height:2.1">—</div>
+          <div><div class="name">ไม่ประสงค์ลงคะแนน</div><div class="lead2">นับเป็นการใช้สิทธิ์ แต่ไม่นับให้หมายเลขใด</div></div>
+          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
+        </div>
+      </div>
+
+      <button class="btn primary wide reveal" id="submit" style="margin-top:20px;--d:.24s" disabled>ยืนยันการลงคะแนน</button>
+      <p class="muted reveal" style="margin-top:12px;text-align:center;--d:.3s">กดยืนยันแล้วแก้ไขไม่ได้ และไม่มีใครย้อนดูได้ว่าบัตรใบนี้เป็นของใคร</p>
+
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="foot">
+  พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3
+</div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+/* รับรหัสเข้าคูหาที่หน้าคูหาออกให้ ถ้าไม่มีแปลว่าเข้าหน้านี้โดยไม่ผ่านคูหา */
+var voteToken = '';
+try { voteToken = sessionStorage.getItem('el_vote') || ''; } catch (e) {}
+
+if (!voteToken) {
+  document.getElementById('tok').textContent = '— ไม่มีรหัส —';
+  Swal.fire({
+    icon: 'warning',
+    title: 'ยังไม่ได้ยืนยันตัวตน',
+    html: 'ต้องยื่นบัตรที่โต๊ะกรรมการเพื่อรับรหัสเข้าคูหาก่อน',
+    confirmButtonText: 'ไปที่โต๊ะกรรมการ',
+    allowOutsideClick: false
+  }).then(function () { window.location.href = 'booth.html'; });
+} else {
+  document.getElementById('tok').textContent = voteToken;
+}
+
+var pick = null;
+var rows = document.querySelectorAll('.row');
+var submit = document.getElementById('submit');
+
+function choose(row) {
+  for (var i = 0; i < rows.length; i++) { rows[i].classList.remove('picked'); }
+  row.classList.add('picked');
+  pick = row.getAttribute('data-v');
+  submit.disabled = false;
+  submit.textContent = pick === '0' ? 'ยืนยัน — ไม่ประสงค์ลงคะแนน' : 'ยืนยัน — เลือกหมายเลข ' + pick;
+}
+
+for (var i = 0; i < rows.length; i++) {
+  rows[i].onclick = function () { choose(this); };
+  rows[i].onkeydown = function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(this); }
+  };
+}
+
+submit.onclick = function () {
+  var who = pick === '0' ? 'ไม่ประสงค์ลงคะแนน'
+          : 'หมายเลข ' + pick + ' — ' + document.querySelector('.row.picked .name').textContent;
+
+  Swal.fire({
+    title: 'ยืนยันตามนี้หรือไม่',
+    html: '<div style="font-family:\'Bai Jamjuree\',sans-serif;font-size:1.35rem;font-weight:600;color:#241C3B;margin:14px 0">' + who + '</div>กดยืนยันแล้วจะแก้ไขไม่ได้',
+    showCancelButton: true,
+    confirmButtonText: 'ยืนยัน หย่อนบัตร',
+    cancelButtonText: 'ขอแก้ไข',
+    reverseButtons: true
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+
+    Swal.fire({
+      title: 'กำลังหย่อนบัตร',
+      html: 'กำลังผูกบัตรเข้ากับลูกโซ่ตรวจสอบ',
+      allowOutsideClick: false,
+      didOpen: function () { Swal.showLoading(); }
+    });
+
+    API.call('castBallot', { voteToken: voteToken, choice: pick }, function (data) {
+      try { sessionStorage.removeItem('el_vote'); } catch (e) {}
+      receipt(who, data);
+    }, function (msg) {
+      Swal.fire({
+        icon: 'error',
+        title: 'ลงคะแนนไม่สำเร็จ',
+        html: msg,
+        confirmButtonText: 'ปิด'
+      });
+    });
+  });
+};
+
+function receipt(who, data) {
+  data = data || {};
+  var now = new Date();
+  document.getElementById('paper').innerHTML =
+    '<div class="receipt">' +
+      '<div class="thumb"></div>' +
+      '<span class="eyebrow">บันทึกบัตรเรียบร้อย</span>' +
+      '<h2 style="margin-bottom:6px">ขอบคุณที่มาใช้สิทธิ์</h2>' +
+      '<p class="lead" style="margin:0 auto">บัตรของคุณถูกนับแล้ว และไม่ถูกเชื่อมกับชื่อของคุณในระบบ</p>' +
+      '<dl class="kv">' +
+        '<dt>สิ่งที่เลือก</dt><dd style="color:var(--stamp)">' + who + '</dd>' +
+        '<dt>เลขที่บัตร</dt><dd>' + (data.ballotId || ('BL69-' + randCode(8))) + '</dd>' +
+        '<dt>เวลาบันทึก</dt><dd>' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ' น.</dd>' +
+        '<dt>ลายนิ้วมือบัตร</dt><dd>' + (data.hash || randHex(40)) + '</dd>' +
+        '<dt>ต่อจากบัตร</dt><dd style="color:var(--ink-faint)">' + (data.prevHash || randHex(40)) + '</dd>' +
+      '</dl>' +
+      '<p class="muted" style="margin-top:18px">จดเลขที่บัตรไว้ได้ หลังปิดหีบจะตรวจได้ว่าบัตรเลขนี้อยู่ในผลรวมจริง แต่จะไม่มีทางรู้ว่าใครเป็นเจ้าของ</p>' +
+      '<a href="index.html" class="btn ghost" style="margin-top:22px">กลับหน้าหลัก</a>' +
+    '</div>';
+
+  initReveal();
+
+  Swal.fire({
+    icon: 'success',
+    title: 'ลงคะแนนสำเร็จ',
+    html: 'บัตรถูกบันทึกแล้ว เชิญออกจากคูหาได้เลย',
+    timer: 2200,
+    showConfirmButton: false
+  });
+}
+
+/* นับถอยหลังรหัสเข้าคูหา */
+var left = 180;
+var timer = setInterval(function () {
+  left -= 1;
+  var el = document.getElementById('left');
+  if (!el) { clearInterval(timer); return; }
+  el.textContent = pad(Math.floor(left / 60)) + ':' + pad(left % 60);
+
+  if (left <= 0) {
+    clearInterval(timer);
+    Swal.fire({
+      icon: 'warning',
+      title: 'รหัสหมดอายุ',
+      html: 'รหัสเข้าคูหามีอายุ 3 นาที กรุณากลับไปยื่นบัตรกับกรรมการอีกครั้ง',
+      confirmButtonText: 'กลับไปที่โต๊ะกรรมการ',
+      allowOutsideClick: false
+    }).then(function () { window.location.href = 'booth.html'; });
+  }
+}, 1000);
+</script>
+</body>
+</html>

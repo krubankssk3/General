@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เลือกตั้งสภานักเรียน — โรงเรียนบ้านละลม</title>
+<link rel="stylesheet" href="election.css">
+</head>
+<body data-page="index.html" data-title="การเลือกตั้งสภานักเรียน ปีการศึกษา 2569" data-sub="โรงเรียนบ้านละลม สำนักงานเขตพื้นที่การศึกษาประถมศึกษาศรีสะเกษ เขต 3" data-doc="หน่วยเลือกตั้งที่ 1<br>อาคารอเนกประสงค์">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+<div class="wrap">
+<div class="sheet">
+
+  <section class="reveal">
+    <span class="eyebrow">สถานะการเลือกตั้ง</span>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:18px">
+      <span class="pill open"><span class="dot"></span> เปิดหีบแล้ว</span>
+      <span class="muted">ปิดหีบใน <b class="mono" id="cd" style="font-size:.95rem;color:var(--ink)">--:--:--</b></span>
+    </div>
+
+    <h2>ทุกเสียงของเรา นับได้จริง ตรวจสอบได้จริง</h2>
+    <p class="lead">นักเรียนทุกคนตั้งแต่ชั้น ป.1 ถึง ม.3 มีสิทธิ์ลงคะแนนคนละหนึ่งเสียง ยืนยันตัวตนด้วยบัตรประจำตัวนักเรียนและใบหน้า บัตรที่ลงแล้วจะไม่ถูกเชื่อมกับชื่อผู้ลงคะแนน ไม่มีใครรู้ว่าใครเลือกเบอร์อะไร</p>
+
+    <div class="grid g4" style="margin-top:28px" id="stats">
+      <div class="stat reveal"><div class="num" id="s1">0</div><div class="lbl">ผู้มาใช้สิทธิ์</div></div>
+      <div class="stat reveal"><div class="num" id="s2">0</div><div class="lbl">ผู้มีสิทธิ์ทั้งหมด</div></div>
+      <div class="stat reveal"><div class="num" id="s3">0<span style="font-size:1.3rem">%</span></div><div class="lbl">คิดเป็นร้อยละ</div></div>
+      <div class="stat reveal"><div class="num" id="s4">0</div><div class="lbl">หมายเลขผู้สมัคร</div></div>
+    </div>
+
+    <div style="margin-top:24px">
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:6px">
+        <span class="muted">ความคืบหน้าการใช้สิทธิ์</span>
+        <span class="mono" id="pct">0%</span>
+      </div>
+      <div class="bar"><i id="bar" style="width:0"></i></div>
+      <p class="muted" style="margin-top:10px">ระหว่างเปิดหีบ หน้านี้แสดงเฉพาะจำนวนผู้มาใช้สิทธิ์ ไม่แสดงคะแนนรายเบอร์ เพื่อไม่ให้ผลระหว่างทางไปมีอิทธิพลต่อคนที่ยังไม่ได้ลงคะแนน</p>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow reveal">ผู้สมัคร</span>
+    <h2 class="reveal">สามทีมที่ลงสมัครปีนี้</h2>
+    <div class="grid g3" style="margin-top:24px" id="cands">
+
+      <div class="card reveal">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div class="no" style="width:62px">1</div>
+          <div><h3>ละลมก้าวหน้า</h3><div class="muted">หัวหน้าทีม ปาลิตา (ม.3/1)</div></div>
+        </div>
+        <p class="lead" style="font-size:.9rem">ขยายเวลาห้องสมุดถึง 16.30 น. ตั้งชมรมซ่อมจักรยาน และทำตู้ยืมอุปกรณ์กีฬาแบบไม่ต้องเซ็นชื่อ</p>
+        <p class="mono" style="margin-top:12px;color:var(--ink-faint)">สมาชิกทีม 8 คน</p>
+      </div>
+
+      <div class="card reveal">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div class="no" style="width:62px">2</div>
+          <div><h3>รวมใจบ้านละลม</h3><div class="muted">หัวหน้าทีม ธนกฤต (ม.2/2)</div></div>
+        </div>
+        <p class="lead" style="font-size:.9rem">ปรับเมนูอาหารกลางวันตามผลโหวตรายเดือน จัดเวรทำความสะอาดใหม่ให้เท่ากันทุกชั้น และเปิดกล่องรับเรื่องร้องเรียนออนไลน์</p>
+        <p class="mono" style="margin-top:12px;color:var(--ink-faint)">สมาชิกทีม 8 คน</p>
+      </div>
+
+      <div class="card reveal">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div class="no" style="width:62px">3</div>
+          <div><h3>เพื่อนพัฒนา</h3><div class="muted">หัวหน้าทีม ณิชาภัทร (ม.3/2)</div></div>
+        </div>
+        <p class="lead" style="font-size:.9rem">ตั้งพี่เลี้ยงประจำชั้นให้น้อง ป.1–ป.3 จัดตลาดนัดของมือสองเทอมละครั้ง และทำป้ายบอกทางในโรงเรียนใหม่ทั้งหมด</p>
+        <p class="mono" style="margin-top:12px;color:var(--ink-faint)">สมาชิกทีม 8 คน</p>
+      </div>
+
+    </div>
+    <p class="muted reveal" style="margin-top:18px">กดที่การ์ดเพื่อดูนโยบายฉบับเต็มและคลิปแนะนำทีม</p>
+  </section>
+
+  <section>
+    <span class="eyebrow reveal">ขั้นตอน</span>
+    <h2 class="reveal">มาถึงคูหาแล้วทำอะไรบ้าง</h2>
+    <div class="grid g4" style="margin-top:24px" id="steps">
+      <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 1</div><h3 style="margin-top:6px">ยื่นบัตรนักเรียน</h3><p class="muted">กรรมการหน่วยสแกนคิวอาร์หลังบัตร ระบบตรวจว่ามีชื่อในทะเบียนและยังไม่ได้ใช้สิทธิ์</p></div>
+      <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 2</div><h3 style="margin-top:6px">ยืนยันใบหน้า</h3><p class="muted">มองกล้องสองวินาที ระบบเทียบกับภาพในทะเบียน ภาพที่ถ่ายจะถูกลบทันทีหลังตรวจเสร็จ</p></div>
+      <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 3</div><h3 style="margin-top:6px">รับสิทธิ์เข้าคูหา</h3><p class="muted">ระบบออกรหัสเข้าคูหาอายุ 3 นาที ใช้ได้ครั้งเดียว หมดเวลาต้องกลับมายื่นบัตรใหม่</p></div>
+      <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 4</div><h3 style="margin-top:6px">กาบัตร</h3><p class="muted">เลือกหมายเลขที่ต้องการหรือกดไม่ประสงค์ลงคะแนน ยืนยันแล้วแก้ไม่ได้</p></div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow reveal">ความโปร่งใส</span>
+    <h2 class="reveal">ทำไมถึงมั่นใจได้ว่าคะแนนไม่ถูกแก้</h2>
+    <div class="grid g2" style="margin-top:22px">
+      <div class="card tint reveal">
+        <h3>บัตรทุกใบผูกกันเป็นลูกโซ่</h3>
+        <p class="lead" style="font-size:.92rem">บัตรแต่ละใบเก็บลายนิ้วมือดิจิทัลของบัตรใบก่อนหน้าไว้ด้วย ถ้ามีใครไปแก้ตัวเลขย้อนหลังแม้เพียงใบเดียว ลูกโซ่จะขาดทันทีและระบบจะชี้ได้ว่าขาดที่ใบไหน</p>
+        <p class="mono" style="margin-top:14px;color:var(--violet)">a91f3c…7b2e → 4d0a8e…1c95 → e77b21…03df</p>
+      </div>
+      <div class="card reveal">
+        <h3>กรรมการนักเรียนเป็นคนกดตรวจเอง</h3>
+        <p class="lead" style="font-size:.92rem">หลังปิดหีบ กรรมการนักเรียนจะกดปุ่มตรวจสอบต่อหน้าที่ประชุม ระบบจะเดินตรวจบัตรทุกใบและแสดงผลบนจอทันที ครูไม่ได้เป็นคนกด</p>
+        <p class="muted" style="margin-top:14px">ทุกการกระทำในระบบถูกบันทึกไว้ว่าใครทำ เวลาใด และแก้อะไร</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</div>
+
+<div class="foot">
+  พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3
+</div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+stagger('#stats .reveal', 110);
+stagger('#cands .reveal', 130);
+stagger('#steps .reveal', 100);
+
+var VOTED = 268, TOTAL = 412;
+
+var fired = false;
+function fillStats() {
+  if (fired) { return; }
+  fired = true;
+  countUp(document.getElementById('s1'), VOTED);
+  countUp(document.getElementById('s2'), TOTAL);
+  countUp(document.getElementById('s4'), 3);
+
+  var pct = Math.round(VOTED / TOTAL * 100);
+  var el = document.getElementById('s3');
+  var n = 0;
+  var t = setInterval(function () {
+    n += 1;
+    if (n >= pct) { n = pct; clearInterval(t); }
+    el.innerHTML = n + '<span style="font-size:1.3rem">%</span>';
+  }, 18);
+
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('pct').textContent = pct + '%';
+}
+
+setTimeout(fillStats, 450);
+
+/* นับถอยหลังปิดหีบ — ของจริงต้องอ่านเวลาจากฝั่งเซิร์ฟเวอร์เท่านั้น */
+var end = new Date().getTime() + (2 * 3600 + 41 * 60 + 8) * 1000;
+setInterval(function () {
+  var d = Math.max(0, end - new Date().getTime());
+  var s = Math.floor(d / 1000);
+  document.getElementById('cd').textContent =
+    pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
+}, 1000);
+
+var cards = document.querySelectorAll('#cands .card');
+for (var i = 0; i < cards.length; i++) {
+  cards[i].style.cursor = 'pointer';
+  cards[i].onclick = function () {
+    var no = this.querySelector('.no').textContent;
+    var name = this.querySelector('h3').textContent;
+    Swal.fire({
+      title: 'หมายเลข ' + no + ' — ' + name,
+      html: '<p style="text-align:left">หน้าสาธิตนี้ยังไม่ได้ต่อกับฐานข้อมูล ของจริงจะดึงนโยบายฉบับเต็ม รูปทีม และลิงก์คลิปแนะนำจากชีต Candidates</p>',
+      confirmButtonText: 'ปิด'
+    });
+  };
+}
+</script>
+</body>
+</html>

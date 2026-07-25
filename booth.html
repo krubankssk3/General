@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คูหาเลือกตั้ง — ยืนยันตัวตน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .stage { display:grid; grid-template-columns: 1fr 380px; gap:26px; align-items:start; }
+  .view { position:relative; aspect-ratio:4/3; background:#15102A; border:2px solid var(--ink); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .brackets { position:absolute; inset:38px; }
+  .brackets i { position:absolute; width:38px; height:38px; border:3px solid var(--violet); }
+  .brackets i:nth-child(1){ top:0; left:0; border-right:none; border-bottom:none; }
+  .brackets i:nth-child(2){ top:0; right:0; border-left:none; border-bottom:none; }
+  .brackets i:nth-child(3){ bottom:0; left:0; border-right:none; border-top:none; }
+  .brackets i:nth-child(4){ bottom:0; right:0; border-left:none; border-top:none; }
+  .beam { position:absolute; left:38px; right:38px; height:2px; background:var(--violet); box-shadow:0 0 14px 2px rgba(91,63,214,.9); animation:sweep 2.1s ease-in-out infinite; }
+  @keyframes sweep { 0%,100%{ top:40px } 50%{ top:calc(100% - 42px) } }
+  .view p { color:#8C82B8; font-family:'Bai Jamjuree',sans-serif; font-size:.95rem; text-align:center; padding:0 30px; z-index:2; }
+  .face { width:150px; height:150px; border-radius:50%; background:var(--violet); color:#fff; font-family:'Bai Jamjuree',sans-serif; font-size:3rem; font-weight:600; display:flex; align-items:center; justify-content:center; z-index:2; }
+  .rail { list-style:none; }
+  .rail li { display:flex; gap:13px; padding:13px 0; border-bottom:1px solid var(--rule); }
+  .rail li:last-child { border-bottom:none; }
+  .rail b { flex:none; width:26px; height:26px; border-radius:50%; border:1px solid var(--rule); color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; font-size:.75rem; display:flex; align-items:center; justify-content:center; }
+  .rail li.on b { background:var(--violet); border-color:var(--violet); color:#fff; }
+  .rail li.done b { background:var(--verify); border-color:var(--verify); color:#fff; }
+  .rail li.on strong, .rail li.done strong { color:var(--ink); }
+  .rail strong { font-family:'Bai Jamjuree',sans-serif; font-size:.9rem; font-weight:500; color:var(--ink-faint); display:block; }
+  .rail span { font-size:.78rem; color:var(--ink-faint); }
+  .token { font-family:'IBM Plex Mono',monospace; font-size:2rem; letter-spacing:.16em; text-align:center; padding:16px; border:2px dashed var(--violet); color:var(--violet); background:var(--violet-soft); }
+  @media (max-width:900px){ .stage { grid-template-columns:1fr; } }
+</style>
+</head>
+<body data-page="booth.html" data-title="คูหาเลือกตั้ง — จุดยืนยันตัวตน" data-sub="หน่วยเลือกตั้งที่ 1 · กรรมการประจำหน่วย unit01" data-doc="เข้าใช้งานเมื่อ 08.12 น.<br>เหลือเวลา 5 ชม. 48 นาที">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+<div class="wrap">
+<div class="sheet">
+
+  <section style="padding-top:28px" class="reveal">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px">
+      <span class="pill open"><span class="dot"></span> หีบเปิดอยู่</span>
+      <span class="muted">ยืนยันตัวตนแล้ววันนี้ <b class="mono" style="color:var(--ink)" id="done">268</b> คน</span>
+      <select id="mode" style="width:auto;margin-left:auto;font-size:.82rem;padding:7px 11px">
+        <option value="live">ใช้ข้อมูลจริง (กรอกเลขประจำตัว)</option>
+        <option value="ok">จำลอง: นักเรียนปกติ</option>
+        <option value="used">จำลอง: ใช้สิทธิ์ไปแล้ว</option>
+        <option value="fail">จำลอง: ใบหน้าไม่ตรง</option>
+      </select>
+    </div>
+
+    <div class="stage">
+
+      <div>
+        <div class="view" id="view">
+          <div class="brackets"><i></i><i></i><i></i><i></i></div>
+          <div class="beam" id="beam"></div>
+          <p id="hint">วางบัตรประจำตัวนักเรียนให้คิวอาร์อยู่ในกรอบ</p>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+          <button class="btn primary" id="act">จำลองการสแกนบัตร</button>
+          <button class="btn ghost" id="reset">เริ่มคนใหม่</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <span class="eyebrow">ผู้มาใช้สิทธิ์</span>
+          <div id="who">
+            <p class="muted">ยังไม่มีข้อมูล รอสแกนบัตร</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">ขั้นตอน</span>
+          <ul class="rail" id="rail">
+            <li class="on"><b>1</b><div><strong>สแกนบัตรนักเรียน</strong><span>อ่านคิวอาร์หลังบัตร</span></div></li>
+            <li><b>2</b><div><strong>ตรวจสิทธิ์ในทะเบียน</strong><span>มีชื่อ และยังไม่ใช้สิทธิ์</span></div></li>
+            <li><b>3</b><div><strong>ยืนยันใบหน้า</strong><span>เทียบกับภาพในทะเบียน</span></div></li>
+            <li><b>4</b><div><strong>ออกรหัสเข้าคูหา</strong><span>อายุ 3 นาที ใช้ครั้งเดียว</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="reveal">
+    <span class="eyebrow">ข้อควรทราบสำหรับกรรมการ</span>
+    <div class="grid g3" style="margin-top:16px" id="notes">
+      <div class="card reveal"><h3>ภาพใบหน้าไม่ถูกเก็บ</h3><p class="muted">ภาพที่ถ่ายในคูหาใช้เทียบแล้วลบทิ้งทันที ไม่บันทึกลงไดรฟ์และไม่ผูกกับบัตรลงคะแนน</p></div>
+      <div class="card reveal"><h3>ตรวจไม่ผ่านไม่ได้แปลว่าโกง</h3><p class="muted">แสงน้อย ใส่แมสก์ หรือตัดผมใหม่ ทำให้ค่าความเหมือนตกได้ ให้กรรมการยืนยันด้วยตาแทนและระบุเหตุผล</p></div>
+      <div class="card reveal"><h3>การยืนยันด้วยตาถูกบันทึก</h3><p class="muted">ทุกครั้งที่กรรมการกดยืนยันแทนระบบ จะบันทึกชื่อผู้กด เวลา และเหตุผลลงสมุดตรวจสอบ</p></div>
+    </div>
+  </section>
+
+</div>
+</div>
+
+<div class="foot">
+  พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3
+</div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+/* หน้านี้ต้องเข้าสู่ระบบก่อน ถ้าไม่มี token เด้งกลับ login */
+if (!Session.guard()) { throw new Error('redirect'); }
+
+stagger('#notes .reveal', 110);
+
+var step = 0;
+var student = { id: '13148', name: 'กันต์ธีร์  สุขประเสริฐ', room: 'ม.2/1', initial: 'กธ' };
+
+var act = document.getElementById('act');
+var hint = document.getElementById('hint');
+var view = document.getElementById('view');
+var rail = document.getElementById('rail').children;
+
+function setStep(n) {
+  for (var i = 0; i < rail.length; i++) {
+    rail[i].className = i < n ? 'done' : (i === n ? 'on' : '');
+  }
+}
+
+function showBeam(on) {
+  document.getElementById('beam').style.display = on ? 'block' : 'none';
+}
+
+document.getElementById('reset').onclick = function () { location.reload(); };
+
+act.onclick = function () {
+  var mode = document.getElementById('mode').value;
+
+  if (step === 0) { doScan(mode); }
+  else if (step === 1) { doFace(mode); }
+  else if (step === 2) { window.location.href = 'vote.html'; }
+};
+
+/* ---- ยิงเข้า backend จริง: ตรวจสิทธิ์แล้วขอ VoteToken ---- */
+function liveCheckIn() {
+  Swal.fire({
+    title: 'ยืนยันตัวตนด้วยเลขประจำตัว',
+    input: 'text',
+    inputPlaceholder: 'เช่น 13001',
+    inputAttributes: { inputmode: 'numeric' },
+    html: '<span class="mono" style="color:#8B849F">ปกติจะได้จากการสแกนคิวอาร์ กรอกมือใช้กรณีบัตรหาย</span>',
+    showCancelButton: true,
+    confirmButtonText: 'ตรวจสิทธิ์',
+    cancelButtonText: 'ยกเลิก',
+    preConfirm: function (v) {
+      if (!String(v || '').trim()) { Swal.showValidationMessage('กรอกเลขประจำตัวก่อน'); }
+      return String(v || '').trim();
+    }
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+
+    Swal.fire({ title: 'กำลังตรวจสอบ', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+
+    API.call('checkIn', { studentId: r.value }, function (data) {
+      /* ได้ VoteToken แล้ว ส่งต่อให้หน้าบัตรผ่าน sessionStorage ไม่ผ่าน URL กันหลุด */
+      try { sessionStorage.setItem('el_vote', data.voteToken); } catch (e) {}
+
+      document.getElementById('who').innerHTML =
+        '<div style="display:flex;gap:14px;align-items:center">' +
+        '<div style="width:52px;height:52px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-family:\'Bai Jamjuree\',sans-serif;font-weight:600">' + esc(data.name).substring(0, 2) + '</div>' +
+        '<div><strong style="font-family:\'Bai Jamjuree\',sans-serif">' + esc(data.name) + '</strong>' +
+        '<div class="muted">ชั้น ' + esc(data.room) + ' \u00b7 เลขประจำตัว ' + esc(data.studentId) + '</div></div></div>' +
+        '<p class="mono" style="margin-top:12px;color:var(--verify)">ตรวจสิทธิ์ผ่าน \u00b7 ออกรหัสเข้าคูหาแล้ว</p>';
+
+      setStep(4);
+      view.innerHTML = '<div style="text-align:center;padding:26px"><div class="mono" style="color:#8C82B8;margin-bottom:12px">รหัสเข้าคูหา</div>' +
+        '<div style="font-family:\'Bai Jamjuree\',sans-serif;font-size:3.2rem;font-weight:700;letter-spacing:.14em;color:#fff">' + esc(data.voteToken) + '</div></div>';
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ตรวจสิทธิ์ผ่าน',
+        html: '<b>' + esc(data.name) + '</b><br>เชิญนักเรียนเข้าคูหา',
+        confirmButtonText: 'ไปที่บัตรลงคะแนน'
+      }).then(function () { window.location.href = 'vote.html'; });
+
+    }, function (msg) {
+      Swal.fire({ icon: 'error', title: 'ตรวจสิทธิ์ไม่ผ่าน', html: msg, confirmButtonText: 'ลองใหม่' });
+    });
+  });
+}
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function doScan(mode) {
+  if (mode === 'live') { liveCheckIn(); return; }
+  act.disabled = true;
+  hint.textContent = 'กำลังอ่านคิวอาร์…';
+
+  setTimeout(function () {
+    if (mode === 'used') {
+      showBeam(false);
+      hint.textContent = 'ตรวจสิทธิ์ไม่ผ่าน';
+      act.disabled = false;
+      Swal.fire({
+        icon: 'error',
+        title: 'ใช้สิทธิ์ไปแล้ว',
+        html: '<b>' + student.name + '</b> (' + student.room + ')<br>ลงคะแนนไปแล้วเมื่อ 09.24 น. ที่หน่วยเลือกตั้งที่ 1<br><span class="mono" style="color:#8B849F">ไม่สามารถออกรหัสเข้าคูหาซ้ำได้</span>',
+        confirmButtonText: 'เรียกคนถัดไป'
+      }).then(function () { location.reload(); });
+      return;
+    }
+
+    document.getElementById('who').innerHTML =
+      '<div style="display:flex;gap:14px;align-items:center">' +
+      '<div style="width:52px;height:52px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-family:\'Bai Jamjuree\',sans-serif;font-weight:600">' + student.initial + '</div>' +
+      '<div><strong style="font-family:\'Bai Jamjuree\',sans-serif">' + student.name + '</strong>' +
+      '<div class="muted">ชั้น ' + student.room + ' · เลขประจำตัว ' + student.id + '</div></div></div>' +
+      '<p class="mono" style="margin-top:12px;color:var(--verify)">มีชื่อในทะเบียน · ยังไม่ใช้สิทธิ์</p>';
+
+    view.innerHTML = '<div class="face">' + student.initial + '</div>';
+    step = 1;
+    setStep(2);
+    act.textContent = 'เริ่มตรวจใบหน้า';
+    act.disabled = false;
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ตรวจสิทธิ์ผ่าน',
+      html: '<b>' + student.name + '</b> มีสิทธิ์ลงคะแนน<br>ขั้นต่อไปให้นักเรียนมองกล้อง',
+      timer: 1600,
+      showConfirmButton: false
+    });
+  }, 1100);
+}
+
+function doFace(mode) {
+  act.disabled = true;
+
+  Swal.fire({
+    title: 'กำลังยืนยันใบหน้า',
+    html: 'เทียบกับภาพในทะเบียนนักเรียน',
+    timer: 1800,
+    timerProgressBar: true,
+    allowOutsideClick: false,
+    didOpen: function () { Swal.showLoading(); }
+  }).then(function () {
+
+    if (mode === 'fail') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ใบหน้าไม่ตรงพอ',
+        html: 'ค่าความเหมือน <b>61.4%</b> ต่ำกว่าเกณฑ์ 80%<br>ให้กรรมการตรวจบัตรด้วยตา แล้วเลือกว่าจะยืนยันแทนหรือไม่',
+        showDenyButton: true,
+        confirmButtonText: 'ยืนยันแทนระบบ',
+        denyButtonText: 'ไม่ยืนยัน'
+      }).then(function (r) {
+        if (r.isConfirmed) {
+          Swal.fire({
+            title: 'ระบุเหตุผล',
+            input: 'text',
+            inputPlaceholder: 'เช่น แสงย้อน ใส่แว่นใหม่',
+            confirmButtonText: 'บันทึกและออกรหัส'
+          }).then(function (x) {
+            if (x.isConfirmed) { issue('ยืนยันโดยกรรมการ'); }
+            else { act.disabled = false; }
+          });
+        } else {
+          act.disabled = false;
+        }
+      });
+      return;
+    }
+
+    issue('ค่าความเหมือน 87.2%');
+  });
+}
+
+function issue(note) {
+  var code = randCode(6);
+  step = 2;
+  setStep(4);
+  act.textContent = 'ส่งเข้าคูหา';
+  act.disabled = false;
+
+  view.innerHTML = '<div style="text-align:center;padding:26px"><div class="mono" style="color:#8C82B8;margin-bottom:12px">รหัสเข้าคูหา</div>' +
+    '<div style="font-family:\'Bai Jamjuree\',sans-serif;font-size:3.2rem;font-weight:700;letter-spacing:.14em;color:#fff">' + code + '</div>' +
+    '<div class="mono" style="color:#A594F0;margin-top:12px">หมดอายุใน <span id="tk">03:00</span></div></div>';
+
+  var left = 180;
+  var t = setInterval(function () {
+    left -= 1;
+    var el = document.getElementById('tk');
+    if (!el) { clearInterval(t); return; }
+    el.textContent = pad(Math.floor(left / 60)) + ':' + pad(left % 60);
+    if (left <= 0) { clearInterval(t); }
+  }, 1000);
+
+  document.getElementById('done').textContent = '269';
+
+  Swal.fire({
+    icon: 'success',
+    title: 'ยืนยันตัวตนเรียบร้อย',
+    html: note + '<br>รหัสเข้าคูหา <b class="mono">' + code + '</b><br><span class="mono" style="color:#8B849F">เชิญนักเรียนเข้าคูหาภายใน 3 นาที</span>',
+    confirmButtonText: 'ปิด'
+  });
+}
+</script>
+</body>
+</html>

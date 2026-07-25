@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ทดสอบการเชื่อมต่อ — ระบบเลือกตั้ง</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .tbox { max-width: 760px; margin: 40px auto; }
+  .trow { display: grid; grid-template-columns: 30px 1fr auto; gap: 14px; align-items: center; padding: 16px 18px; border: 1px solid var(--rule); background: var(--card); margin-bottom: 10px; }
+  .trow .ic { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; color: #fff; font-size: .9rem; }
+  .ic.wait { background: var(--ink-faint); }
+  .ic.ok { background: var(--verify); }
+  .ic.bad { background: var(--stamp); }
+  .trow .lb { font-family: 'Bai Jamjuree', sans-serif; font-weight: 500; }
+  .trow .ds { font-size: .82rem; color: var(--ink-faint); }
+  .trow .rs { font-family: 'IBM Plex Mono', monospace; font-size: .78rem; text-align: right; max-width: 260px; word-break: break-all; }
+  .verdict { padding: 22px; border: 2px solid var(--ink); text-align: center; margin-bottom: 20px; display: none; }
+  .verdict.show { display: block; }
+  .verdict.pass { border-color: var(--verify); background: #E3F5EE; }
+  .verdict.fail { border-color: var(--stamp); background: #FBE7EB; }
+  .verdict h2 { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div class="tbox">
+  <div style="text-align:center;margin-bottom:26px">
+    <span class="eyebrow">เครื่องมือช่าง</span>
+    <h1 style="font-family:'Bai Jamjuree',sans-serif;font-size:1.7rem;font-weight:600">ทดสอบการเชื่อมต่อ Backend</h1>
+    <p class="muted">เปิดหน้านี้บน GitHub Pages เพื่อเช็คว่าเว็บคุยกับ GAS ได้ไหม ก่อนใช้งานจริง</p>
+  </div>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div id="rows">
+    <div class="trow" data-k="config"><div class="ic wait" id="i-config">1</div><div><div class="lb">อ่านค่า config.js</div><div class="ds">มี API_URL และไม่ใช่ค่าตัวอย่าง</div></div><div class="rs" id="r-config">รอ…</div></div>
+    <div class="trow" data-k="ping"><div class="ic wait" id="i-ping">2</div><div><div class="lb">เชื่อมต่อและ CORS</div><div class="ds">ยิง ping ทะลุถึง GAS โดยไม่ติด CORS</div></div><div class="rs" id="r-ping">รอ…</div></div>
+    <div class="trow" data-k="live"><div class="ic wait" id="i-live">3</div><div><div class="lb">อ่านข้อมูลผู้มีสิทธิ์</div><div class="ds">ชีตมีข้อมูลแล้ว (รัน seed หรือ import แล้ว)</div></div><div class="rs" id="r-live">รอ…</div></div>
+    <div class="trow" data-k="login"><div class="ic wait" id="i-login">4</div><div><div class="lb">เข้าสู่ระบบทดสอบ</div><div class="ds">login ด้วย krubank / 1234</div></div><div class="rs" id="r-login">รอ…</div></div>
+  </div>
+
+  <button class="btn primary wide xl" id="run" style="margin-top:18px">เริ่มทดสอบ</button>
+
+  <div class="card" style="margin-top:20px">
+    <h3 style="margin-bottom:8px">ถ้าติดตรงข้อ 2 (CORS)</h3>
+    <p class="muted">แปลว่า Deploy ตั้งค่าสิทธิ์ยังไม่ถูก เปิด Apps Script → Deploy → Manage deployments → ปุ่มดินสอแก้ไข → ตั้ง <b>Execute as: Me</b> และ <b>Who has access: Anyone</b> → Deploy ใหม่เป็น New version</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+function mark(k, ok, txt) {
+  var ic = document.getElementById('i-' + k);
+  ic.className = 'ic ' + (ok ? 'ok' : 'bad');
+  ic.textContent = ok ? '\u2713' : '\u2717';
+  document.getElementById('r-' + k).textContent = txt;
+  return ok;
+}
+
+function raw(action, data, ok, fail) {
+  fetch(CONFIG.API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: action, token: Session.get(), data: data || {} })
+  })
+  .then(function (r) { return r.text(); })
+  .then(function (t) {
+    var j;
+    try { j = JSON.parse(t); } catch (e) { fail('ตอบกลับไม่ใช่ JSON: ' + t.substring(0, 40)); return; }
+    ok(j);
+  })
+  .catch(function (e) { fail(String(e.message || e)); });
+}
+
+document.getElementById('run').onclick = function () {
+  var btn = this;
+  lockBtn(btn, 'กำลังทดสอบ…');
+  document.getElementById('verdict').className = 'verdict';
+
+  var fails = 0;
+  function done() {
+    unlockBtn(btn);
+    var v = document.getElementById('verdict');
+    if (fails === 0) {
+      v.className = 'verdict show pass';
+      v.innerHTML = '<h2>เชื่อมต่อสำเร็จทุกด่าน</h2><p>ระบบพร้อมใช้งาน อัปไฟล์ที่เหลือขึ้น GitHub Pages ได้เลย</p>';
+    } else {
+      v.className = 'verdict show fail';
+      v.innerHTML = '<h2>ติด ' + fails + ' ด่าน</h2><p>ดูข้อที่กากบาทแดง แล้วแก้ตามคำแนะนำด้านล่าง</p>';
+    }
+  }
+
+  /* ด่าน 1 — config */
+  if (!CONFIG.API_URL || CONFIG.API_URL.indexOf('/exec') < 0 || CONFIG.API_URL.indexOf('วางรหัส') >= 0) {
+    mark('config', false, 'ยังไม่ได้ใส่ URL /exec'); fails++;
+    ['ping', 'live', 'login'].forEach(function (k) { mark(k, false, 'ข้าม'); });
+    done(); return;
+  }
+  mark('config', true, 'พบ URL แล้ว');
+
+  /* ด่าน 2 — ping */
+  raw('ping', {}, function (j) {
+    mark('ping', true, 'ตอบกลับใน ' + (j.data && j.data.time ? 'สำเร็จ' : 'สำเร็จ'));
+
+    /* ด่าน 3 — live */
+    raw('live', {}, function (j2) {
+      if (j2.ok && j2.data) {
+        mark('live', j2.data.total > 0, j2.data.total > 0 ? j2.data.total + ' คนในทะเบียน' : 'ทะเบียนว่าง ยังไม่ seed');
+        if (!(j2.data.total > 0)) { fails++; }
+      } else { mark('live', false, j2.error || 'ไม่ได้ข้อมูล'); fails++; }
+
+      /* ด่าน 4 — login */
+      raw('login', { username: 'krubank', password: '1234' }, function (j3) {
+        if (j3.ok && j3.data && j3.data.token) {
+          mark('login', true, 'บทบาท ' + j3.data.role);
+        } else {
+          mark('login', false, j3.error || 'ล็อกอินไม่ผ่าน'); fails++;
+        }
+        done();
+      }, function (e) { mark('login', false, e); fails++; done(); });
+
+    }, function (e) { mark('live', false, e); fails++; mark('login', false, 'ข้าม'); fails++; done(); });
+
+  }, function (e) {
+    mark('ping', false, 'CORS หรือเชื่อมต่อไม่ได้'); fails++;
+    mark('live', false, 'ข้าม'); mark('login', false, 'ข้าม'); fails += 2;
+    done();
+  });
+};
+</script>
+</body>
+</html>
