@@ -379,11 +379,14 @@ document.getElementById('lgup').onclick = function () {
   if (!picked) { return; }
   if (!lockBtn(btn, 'กำลังอัปโหลด…')) { return; }
 
+  var mime = picked.type;
+  var fname = picked.name;
+
   fileToBase64(picked, function (b64) {
-    /* ของจริงเรียก API.call('uploadLogo', {...}) แล้วรอ lh3 กลับมา */
-    setTimeout(function () {
-      var id = randCode(16) + randCode(17);
-      applyLogo('https://lh3.googleusercontent.com/d/' + id);
+    showLoading('กำลังอัปโหลด', 'ส่งไฟล์ขึ้นไดรฟ์ในโฟลเดอร์ Logo');
+
+    API.call('uploadLogo', { base64: b64, mimeType: mime, fileName: fname }, function (data) {
+      applyLogo(data.url);
       unlockBtn(btn);
       document.getElementById('lgfile').value = '';
       document.getElementById('lgprev').style.display = 'none';
@@ -393,10 +396,13 @@ document.getElementById('lgup').onclick = function () {
       Swal.fire({
         icon: 'success',
         title: 'อัปโหลดเรียบร้อย',
-        html: 'เก็บไฟล์ไว้ในโฟลเดอร์ <b>Logo</b> บนไดรฟ์แล้ว และตั้งการแชร์เป็นเปิดให้ทุกคนที่มีลิงก์ดูได้<br>ทุกหน้าในระบบจะเปลี่ยนตราให้อัตโนมัติ',
+        html: 'เก็บไฟล์ <b>' + data.fileName + '</b> ไว้ในโฟลเดอร์ Logo บนไดรฟ์แล้ว และเปิดสิทธิ์ให้ดูด้วยลิงก์<br>ทุกหน้าในระบบเปลี่ยนตราให้อัตโนมัติ',
         confirmButtonText: 'ปิด'
       });
-    }, 1400);
+    }, function (msg) {
+      unlockBtn(btn);
+      Swal.fire({ icon: 'error', title: 'อัปโหลดไม่สำเร็จ', html: msg, confirmButtonText: 'ลองใหม่' });
+    });
   }, function (msg) {
     unlockBtn(btn);
     toastError(msg);
@@ -439,11 +445,26 @@ document.getElementById('lgsave').onclick = function () {
 
 function saveUrl(v, btn) {
   if (!lockBtn(btn, 'กำลังบันทึก…')) { return; }
-  setTimeout(function () {
-    applyLogo(v);
+  showLoading('กำลังบันทึกลิงก์');
+
+  API.call('setLogoUrl', { url: v }, function (data) {
+    applyLogo(data.url);
     unlockBtn(btn);
-    Swal.fire({ icon: 'success', title: 'บันทึกลิงก์แล้ว', html: 'ทุกหน้าในระบบจะเปลี่ยนตราให้อัตโนมัติ', timer: 2000, showConfirmButton: false });
-  }, 900);
+    document.getElementById('lgurl').value = '';
+    document.getElementById('lgurlprev').style.display = 'none';
+    Swal.fire({
+      icon: 'success',
+      title: 'บันทึกลิงก์แล้ว',
+      html: data.converted
+        ? 'ระบบแปลงลิงก์ Drive เป็นลิงก์ภาพตรงให้อัตโนมัติ<br>ทุกหน้าในระบบเปลี่ยนตราให้แล้ว'
+        : 'ทุกหน้าในระบบเปลี่ยนตราให้อัตโนมัติ',
+      timer: 2400,
+      showConfirmButton: false
+    });
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: msg, confirmButtonText: 'ลองใหม่' });
+  });
 }
 
 function applyLogo(url) {
