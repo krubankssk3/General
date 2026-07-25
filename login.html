@@ -118,12 +118,7 @@ function doLogin() {
 
   if (!lockBtn(btn, 'กำลังตรวจสอบ…')) { return; }
 
-  Swal.fire({
-    title: 'กำลังเข้าสู่ระบบ',
-    html: 'กำลังตรวจสอบสิทธิ์กับเซิร์ฟเวอร์',
-    allowOutsideClick: false,
-    didOpen: function () { Swal.showLoading(); }
-  });
+  showLoading('กำลังเข้าสู่ระบบ', 'ตรวจสอบสิทธิ์กับเซิร์ฟเวอร์');
 
   API.call('login', { username: u, password: p }, function (data) {
     Session.set(data.token);
