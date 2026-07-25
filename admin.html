@@ -64,7 +64,7 @@
         <div class="mini"><span>หมายเลข 1 ละลมก้าวหน้า</span><b>118</b></div>
         <div class="mini"><span>หมายเลข 2 รวมใจบ้านละลม</span><b>96</b></div>
         <div class="mini"><span>หมายเลข 3 เพื่อนพัฒนา</span><b>47</b></div>
-        <div class="mini"><span>ไม่ประสงค์ลงคะแนน</span><b>7</b></div>
+        <div class="mini"><span>บัตรเสีย</span><b>7</b></div>
       </div>
 
       <div class="card reveal">
@@ -284,7 +284,7 @@ for (var i = 0; i < phs.length; i++) {
 var STEP_TO_STATUS = ['prepare', 'open', 'closed', 'published'];
 
 function advance(n) {
-  Swal.fire({ title: 'กำลังบันทึก', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+  showLoading('กำลังบันทึก', 'อัปเดตสถานะการเลือกตั้ง');
 
   API.call('setStatus', { status: STEP_TO_STATUS[n] }, function () {
     cur = n;
@@ -303,12 +303,7 @@ function advance(n) {
 
 /* ตรวจลูกโซ่บัตร */
 document.getElementById('chain').onclick = function () {
-  Swal.fire({
-    title: 'กำลังตรวจลูกโซ่บัตร',
-    html: 'กำลังเดินตรวจบัตรทุกใบบนเซิร์ฟเวอร์',
-    allowOutsideClick: false,
-    didOpen: function () { Swal.showLoading(); }
-  });
+  showLoading('กำลังตรวจลูกโซ่บัตร', 'เดินตรวจบัตรทุกใบบนเซิร์ฟเวอร์');
 
   API.call('verifyChain', {}, function (data) {
     if (data.intact) {
