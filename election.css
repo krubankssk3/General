@@ -1,18 +1,74 @@
 @import url('https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap');
 
+/* ===== ระบบธีม เปลี่ยนที่ data-theme บน <html> =====
+   ค่าคงที่ข้ามธีม */
 :root {
-  --ink: #241C3B;
-  --ink-soft: #5A5178;
-  --ink-faint: #8B849F;
-  --paper: #F3F2EC;
-  --card: #FFFFFF;
-  --rule: #D2CFC4;
-  --violet: #5B3FD6;
-  --violet-soft: #EEEAFC;
-  --stamp: #D6234A;
-  --verify: #0E8F6E;
-  --amber: #B8770C;
+  --violet: #6D4FE0;
+  --violet-ink: #FFFFFF;
+  --stamp: #E23A5C;
+  --verify: #12A47E;
+  --amber: #C88A1E;
   --side-w: 268px;
+}
+
+/* ---- ธีมสว่าง (ปรับให้ตัวอักษรเข้มขึ้น อ่านง่ายกว่าเดิม) ---- */
+:root, [data-theme="light"] {
+  --ink: #1A1330;          /* เดิม #241C3B เข้มขึ้น */
+  --ink-soft: #453C63;     /* เดิม #5A5178 เข้มขึ้นชัด */
+  --ink-faint: #6B6488;    /* เดิม #8B849F เข้มขึ้น อ่านออก */
+  --paper: #F4F3ED;
+  --card: #FFFFFF;
+  --rule: #CFCBBF;
+  --violet-soft: #ECE7FB;
+  --sidebar: #1A1330;
+  --sidebar-ink: #EDEAF7;
+  --sidebar-faint: #9089B0;
+  --sidebar-rule: #362B57;
+  --sidebar-hover: #2C2350;
+  --screen-bg: #17122C;
+  --screen-ink: #EDEAF7;
+  --shadow: 0 1px 3px rgba(26,19,48,.08);
+}
+
+/* ---- ธีมมืด ---- */
+[data-theme="dark"] {
+  --ink: #ECE9F5;
+  --ink-soft: #B8B2CE;
+  --ink-faint: #8A83A6;
+  --paper: #14101F;
+  --card: #1E1830;
+  --rule: #362E4C;
+  --violet: #8B6FF0;
+  --violet-soft: #2A2247;
+  --stamp: #FF6B85;
+  --verify: #3FD9A8;
+  --amber: #E6B44A;
+  --sidebar: #0F0C1A;
+  --sidebar-ink: #ECE9F5;
+  --sidebar-faint: #7A7395;
+  --sidebar-rule: #2A2340;
+  --sidebar-hover: #241D38;
+  --screen-bg: #0F0C1A;
+  --screen-ink: #ECE9F5;
+  --shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme="auto"] {
+    --ink: #ECE9F5; --ink-soft: #B8B2CE; --ink-faint: #8A83A6;
+    --paper: #14101F; --card: #1E1830; --rule: #362E4C;
+    --violet: #8B6FF0; --violet-soft: #2A2247; --stamp: #FF6B85;
+    --verify: #3FD9A8; --amber: #E6B44A;
+    --sidebar: #0F0C1A; --sidebar-ink: #ECE9F5; --sidebar-faint: #7A7395;
+    --sidebar-rule: #2A2340; --sidebar-hover: #241D38;
+    --screen-bg: #0F0C1A; --screen-ink: #ECE9F5;
+    --shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+}
+
+html { transition: none; }
+body, .side, .card, .masthead, .sheet, input, select, .btn {
+  transition: background-color .3s ease, color .3s ease, border-color .3s ease;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,8 +89,8 @@ a { color: var(--violet); }
 .app { display: grid; grid-template-columns: var(--side-w) 1fr; min-height: 100vh; }
 
 .side {
-  background: var(--ink);
-  color: #EDEAF7;
+  background: var(--sidebar);
+  color: var(--sidebar-ink);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -43,10 +99,10 @@ a { color: var(--violet); }
   flex-direction: column;
 }
 
-.side-brand { padding: 22px 20px; border-bottom: 1px solid #3A2F5C; display: flex; gap: 12px; align-items: center; }
+.side-brand { padding: 22px 20px; border-bottom: 1px solid var(--sidebar-rule); display: flex; gap: 12px; align-items: center; }
 .side-brand img { width: 44px; height: 44px; object-fit: contain; flex: none; background: #fff; border-radius: 6px; padding: 3px; }
 .side-brand strong { font-family: 'Bai Jamjuree', sans-serif; font-size: .95rem; font-weight: 600; color: #fff; display: block; line-height: 1.35; }
-.side-brand span { font-size: .7rem; color: #8C82B8; }
+.side-brand span { font-size: .7rem; color: var(--sidebar-faint); }
 
 .side-nav { padding: 14px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
 
@@ -54,7 +110,7 @@ a { color: var(--violet); }
   font-family: 'Bai Jamjuree', sans-serif;
   font-size: 1.02rem;
   font-weight: 500;
-  color: #C9C2E4;
+  color: var(--sidebar-ink);
   text-decoration: none;
   padding: 16px 18px;
   border-radius: 4px;
@@ -63,12 +119,22 @@ a { color: var(--violet); }
   transition: background .16s, color .16s, border-color .16s;
 }
 
-.side-nav a small { display: block; font-family: 'IBM Plex Sans Thai', sans-serif; font-weight: 300; font-size: .74rem; color: #8C82B8; line-height: 1.5; }
-.side-nav a:hover { background: #322853; color: #fff; }
+.side-nav a small { display: block; font-family: 'IBM Plex Sans Thai', sans-serif; font-weight: 300; font-size: .74rem; color: var(--sidebar-faint); line-height: 1.5; }
+.side-nav a:hover { background: var(--sidebar-hover); color: #fff; }
 .side-nav a.on { background: rgba(91, 63, 214, .3); color: #fff; border-left-color: var(--violet); }
 .side-nav a:focus-visible { outline: 3px solid var(--violet); outline-offset: -3px; }
 
-.side-foot { padding: 16px 20px; border-top: 1px solid #3A2F5C; font-size: .72rem; color: #8C82B8; }
+.theme-pick { display: flex; gap: 4px; padding: 10px 14px 4px; }
+.theme-pick button {
+  flex: 1; font-family: 'Bai Jamjuree', sans-serif; font-size: .74rem; font-weight: 500;
+  padding: 9px 4px; border: 1px solid var(--sidebar-rule); background: transparent;
+  color: var(--sidebar-faint); border-radius: 4px; cursor: pointer; transition: all .15s;
+}
+.theme-pick button:hover { color: #fff; border-color: var(--violet); }
+.theme-pick button.on { background: var(--violet); border-color: var(--violet); color: #fff; }
+.theme-lbl { padding: 4px 16px 0; font-family: 'IBM Plex Mono', monospace; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--sidebar-faint); }
+
+.side-foot { padding: 16px 20px; border-top: 1px solid var(--sidebar-rule); font-size: .72rem; color: var(--sidebar-faint); }
 
 .main { min-width: 0; display: flex; flex-direction: column; }
 
@@ -96,7 +162,7 @@ h3 { font-family: 'Bai Jamjuree', sans-serif; font-size: 1.08rem; font-weight: 6
 .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-.card { background: var(--card); border: 1px solid var(--rule); padding: 20px; }
+.card { background: var(--card); border: 1px solid var(--rule); padding: 20px; box-shadow: var(--shadow); }
 .card.tint { background: var(--violet-soft); border-color: #CFC4F5; }
 
 .pill { display: inline-flex; align-items: center; gap: 7px; font-family: 'Bai Jamjuree', sans-serif; font-size: .82rem; font-weight: 500; padding: 5px 13px; border: 1px solid currentColor; border-radius: 100px; }
@@ -115,9 +181,9 @@ h3 { font-family: 'Bai Jamjuree', sans-serif; font-size: 1.08rem; font-weight: 6
   font-weight: 500;
   padding: 15px 30px;
   min-height: 54px;
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: #fff;
+  border: 1px solid var(--violet);
+  background: var(--violet);
+  color: var(--violet-ink);
   border-radius: 4px;
   cursor: pointer;
   transition: transform .15s, background .15s, opacity .15s;
@@ -130,8 +196,8 @@ h3 { font-family: 'Bai Jamjuree', sans-serif; font-size: 1.08rem; font-weight: 6
 
 .btn:hover { transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
-.btn.primary { background: var(--violet); border-color: var(--violet); }
-.btn.ghost { background: transparent; color: var(--ink); }
+.btn.primary { background: var(--violet); border-color: var(--violet); color: var(--violet-ink); }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
 .btn.danger { background: var(--stamp); border-color: var(--stamp); }
 .btn.wide { width: 100%; }
 .btn.xl { font-size: 1.18rem; padding: 20px 36px; min-height: 66px; }
@@ -191,8 +257,10 @@ input[type=file] { padding: 11px; cursor: pointer; }
 
 /* ---------- SweetAlert ---------- */
 
-.swal2-popup { border-radius: 4px !important; border: 1px solid var(--rule); border-top: 4px solid var(--violet); font-family: 'IBM Plex Sans Thai', sans-serif !important; font-weight: 300; }
+.swal2-popup { border-radius: 4px !important; background: var(--card) !important; border: 1px solid var(--rule); border-top: 4px solid var(--violet); font-family: 'IBM Plex Sans Thai', sans-serif !important; font-weight: 300; }
+.swal2-input, .swal2-textarea { background: var(--paper) !important; color: var(--ink) !important; border-color: var(--rule) !important; }
 .swal2-title { font-family: 'Bai Jamjuree', sans-serif !important; font-weight: 600 !important; color: var(--ink) !important; font-size: 1.32rem !important; }
+.swal2-html-container b { color: var(--ink) !important; }
 .swal2-html-container { color: var(--ink-soft) !important; font-size: .96rem !important; }
 .swal2-styled { border-radius: 4px !important; font-family: 'Bai Jamjuree', sans-serif !important; font-weight: 500 !important; font-size: 1rem !important; padding: 13px 26px !important; box-shadow: none !important; }
 .swal2-confirm { background: var(--violet) !important; }
