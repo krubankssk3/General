@@ -415,9 +415,32 @@ window.onerror = function (msg) {
   return false;
 };
 
+/* ดึงตราโรงเรียนล่าสุดจาก backend มาแสดง (cache ไว้กันกระพริบ) */
+function loadLogo() {
+  var cached = '';
+  try { cached = localStorage.getItem('el_logo') || ''; } catch (e) {}
+  if (cached) { setLogoEverywhere(cached); }
+
+  if (!API_URL) { return; }
+  API.call('getLogo', {}, function (data) {
+    if (data && data.url) {
+      setLogoEverywhere(data.url);
+      try { localStorage.setItem('el_logo', data.url); } catch (e) {}
+    }
+  }, function () {});
+}
+
+function setLogoEverywhere(url) {
+  var el = document.getElementById('side-logo');
+  if (el) { el.src = url; }
+  var now = document.getElementById('lgnow');
+  if (now) { now.src = url; }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   buildShell();
   watchNet();
   initReveal();
   Voice.init();
+  loadLogo();
 });
