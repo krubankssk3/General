@@ -180,20 +180,42 @@
 <script src="config.js"></script>
 <script src="election.js"></script>
 <script>
+/* ต้องเข้าสู่ระบบก่อน */
+if (!Session.guard()) { throw new Error('redirect'); }
+
 stagger('#stats .reveal', 100);
 stagger('#tools .reveal', 110);
 
-setTimeout(function () {
-  countUp(document.getElementById('a1'), 268);
-  countUp(document.getElementById('a2'), 144);
-  countUp(document.getElementById('a3'), 11);
-  countUp(document.getElementById('a4'), 4);
-}, 400);
-
-/* เปลี่ยนขั้นการเลือกตั้ง */
+var STATUS_TO_STEP = { prepare: 0, open: 1, closed: 2, published: 3 };
 var cur = 1;
 var phs = document.querySelectorAll('.ph');
 var names = ['เตรียมการ', 'เปิดหีบ', 'ปิดหีบ', 'ประกาศผล'];
+
+/* ดึงสถิติจริงจาก backend */
+function loadStats() {
+  API.call('live', {}, function (data) {
+    var voted = data.voted || 0;
+    var total = data.total || 0;
+    countUp(document.getElementById('a1'), voted);
+    countUp(document.getElementById('a2'), Math.max(total - voted, 0));
+
+    /* ปรับแถบสถานะให้ตรงกับ backend */
+    if (data.status && STATUS_TO_STEP[data.status] !== undefined) {
+      cur = STATUS_TO_STEP[data.status];
+      repaint();
+    }
+  }, function () {});
+}
+loadStats();
+setInterval(loadStats, 15000);
+
+/* a3 a4 (ใบหน้าไม่ผ่าน / ยืนยันแทน) ยังไม่มี endpoint นับ ใส่ 0 ไว้ก่อน */
+setTimeout(function () {
+  countUp(document.getElementById('a3'), 0);
+  countUp(document.getElementById('a4'), 0);
+}, 400);
+
+/* เปลี่ยนขั้นการเลือกตั้ง */
 
 function repaint() {
   for (var i = 0; i < phs.length; i++) {
@@ -259,41 +281,53 @@ for (var i = 0; i < phs.length; i++) {
   };
 }
 
+var STEP_TO_STATUS = ['prepare', 'open', 'closed', 'published'];
+
 function advance(n) {
-  cur = n;
-  repaint();
-  Swal.fire({
-    icon: 'success',
-    title: 'เปลี่ยนเป็นขั้น ' + names[n] + 'แล้ว',
-    html: n === 2 ? 'หน้าสาธารณะและจอแสดงผลจะสลับไปแสดงคะแนนเต็มโดยอัตโนมัติ' : 'บันทึกลงสมุดตรวจสอบเรียบร้อย',
-    timer: 2400,
-    showConfirmButton: false
+  Swal.fire({ title: 'กำลังบันทึก', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+
+  API.call('setStatus', { status: STEP_TO_STATUS[n] }, function () {
+    cur = n;
+    repaint();
+    Swal.fire({
+      icon: 'success',
+      title: 'เปลี่ยนเป็นขั้น ' + names[n] + 'แล้ว',
+      html: n === 2 ? 'หน้าสาธารณะและจอแสดงผลจะสลับไปแสดงคะแนนเต็มโดยอัตโนมัติ' : 'บันทึกลงสมุดตรวจสอบเรียบร้อย',
+      timer: 2400,
+      showConfirmButton: false
+    });
+  }, function (msg) {
+    Swal.fire({ icon: 'error', title: 'เปลี่ยนสถานะไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
   });
 }
 
 /* ตรวจลูกโซ่บัตร */
 document.getElementById('chain').onclick = function () {
-  var n = 0;
   Swal.fire({
     title: 'กำลังตรวจลูกโซ่บัตร',
-    html: 'ตรวจแล้ว <b>0</b> / 268 ใบ',
+    html: 'กำลังเดินตรวจบัตรทุกใบบนเซิร์ฟเวอร์',
     allowOutsideClick: false,
-    didOpen: function () {
-      Swal.showLoading();
-      var t = setInterval(function () {
-        n += 19;
-        if (n >= 268) { n = 268; clearInterval(t); Swal.close(); }
-        var c = Swal.getHtmlContainer();
-        if (c) { c.querySelector('b').textContent = n; }
-      }, 130);
+    didOpen: function () { Swal.showLoading(); }
+  });
+
+  API.call('verifyChain', {}, function (data) {
+    if (data.intact) {
+      Swal.fire({
+        icon: 'success',
+        title: 'ลูกโซ่สมบูรณ์',
+        html: 'ตรวจบัตร <b>' + data.checked + '</b> ใบ ลายนิ้วมือต่อกันครบทุกใบ ไม่พบร่องรอยการแก้ไขย้อนหลัง<br><span class="mono" style="color:#8B849F">ใบสุดท้าย ' + String(data.lastHash || '').substring(0, 32) + '</span>',
+        confirmButtonText: 'ปิด'
+      });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'พบความผิดปกติ',
+        html: 'ลูกโซ่ขาดที่บัตร <b>' + data.brokenAt + '</b> (แถวที่ ' + data.row + ')<br>ตรวจผ่านมาแล้ว ' + data.checked + ' ใบ<br><span class="mono" style="color:#E23A5C">มีการแก้ไขข้อมูลบัตรย้อนหลัง ต้องตรวจสอบทันที</span>',
+        confirmButtonText: 'รับทราบ'
+      });
     }
-  }).then(function () {
-    Swal.fire({
-      icon: 'success',
-      title: 'ลูกโซ่สมบูรณ์',
-      html: 'ตรวจบัตร <b>268</b> ใบ ลายนิ้วมือต่อกันครบทุกใบ ไม่พบร่องรอยการแก้ไขย้อนหลัง<br><span class="mono" style="color:#8B849F">ใบสุดท้าย ' + randHex(40) + '</span>',
-      confirmButtonText: 'ปิด'
-    });
+  }, function (msg) {
+    Swal.fire({ icon: 'error', title: 'ตรวจไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
   });
 };
 
