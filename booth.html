@@ -162,7 +162,7 @@ function liveCheckIn() {
   }).then(function (r) {
     if (!r.isConfirmed) { return; }
 
-    Swal.fire({ title: 'กำลังตรวจสอบ', allowOutsideClick: false, didOpen: function () { Swal.showLoading(); } });
+    showLoading('กำลังตรวจสอบ', 'ค้นทะเบียนผู้มีสิทธิ์');
 
     API.call('checkIn', { studentId: r.value }, function (data) {
       /* ได้ VoteToken แล้ว ส่งต่อให้หน้าบัตรผ่าน sessionStorage ไม่ผ่าน URL กันหลุด */
