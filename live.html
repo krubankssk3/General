@@ -83,7 +83,7 @@
   <div class="panel reveal">
     <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:20px">
       <h2>ผลคะแนน</h2>
-      <button class="btn primary" id="toggle" style="margin-left:auto">ดูมุมมองหลังปิดหีบ</button>
+      <button class="btn primary" id="toggle" style="margin-left:auto">ดูผลคะแนน (หลังปิดหีบ)</button>
     </div>
 
     <div id="locked" class="locked">
@@ -102,103 +102,156 @@
 <script src="config.js"></script>
 <script src="election.js"></script>
 <script>
+/* ปุ่มสลับธีมลอยมุมขวาบน (หน้าจอฉายไม่มีเมนูซ้าย) */
+(function () {
+  var bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;top:14px;right:16px;display:flex;gap:4px;z-index:50';
+  var names = [['light', 'สว่าง'], ['dark', 'มืด'], ['auto', 'อัตโนมัติ']];
+  for (var i = 0; i < names.length; i++) {
+    (function (key, label) {
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText = 'font-family:Bai Jamjuree,sans-serif;font-size:.72rem;font-weight:500;padding:7px 12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#C9C2E4;border-radius:4px;cursor:pointer';
+      b.onclick = function () {
+        Theme.set(key);
+        paintThemeBtns();
+      };
+      b.setAttribute('data-tk', key);
+      bar.appendChild(b);
+    })(names[i][0], names[i][1]);
+  }
+  document.body.appendChild(bar);
+  window.paintThemeBtns = function () {
+    var cur = Theme.get();
+    var bs = bar.querySelectorAll('button');
+    for (var i = 0; i < bs.length; i++) {
+      var on = bs[i].getAttribute('data-tk') === cur;
+      bs[i].style.background = on ? 'var(--violet)' : 'rgba(255,255,255,.06)';
+      bs[i].style.color = on ? '#fff' : '#C9C2E4';
+      bs[i].style.borderColor = on ? 'var(--violet)' : 'rgba(255,255,255,.2)';
+    }
+  };
+  paintThemeBtns();
+})();
+
 var TOTAL = 412;
-var voted = 268;
+var voted = 0;
+var arcMax = 402;
+var lastVoted = -1;
 
-var classes = [
-  { n: 'ป.1', v: 31, t: 38 }, { n: 'ป.2', v: 34, t: 41 }, { n: 'ป.3', v: 29, t: 44 },
-  { n: 'ป.4', v: 40, t: 46 }, { n: 'ป.5', v: 26, t: 43 }, { n: 'ป.6', v: 33, t: 48 },
-  { n: 'ม.1', v: 27, t: 52 }, { n: 'ม.2', v: 30, t: 51 }, { n: 'ม.3', v: 18, t: 49 }
-];
+var classBox = document.getElementById('classes');
+var rendered = {};
 
-var box = document.getElementById('classes');
-var best = 0;
-var i;
+function renderClasses(byGrade) {
+  var order = ['ป.1','ป.2','ป.3','ป.4','ป.5','ป.6','ม.1','ม.2','ม.3'];
+  var best = 0, g;
+  for (g in byGrade) {
+    if (byGrade[g].total > 0) {
+      var pp = Math.round(byGrade[g].voted / byGrade[g].total * 100);
+      if (pp > best) { best = pp; }
+    }
+  }
 
-for (i = 0; i < classes.length; i++) {
-  var p = Math.round(classes[i].v / classes[i].t * 100);
-  if (p > best) { best = p; }
+  for (var i = 0; i < order.length; i++) {
+    var name = order[i];
+    if (!byGrade[name]) { continue; }
+    var pct = byGrade[name].total > 0 ? Math.round(byGrade[name].voted / byGrade[name].total * 100) : 0;
+
+    if (!rendered[name]) {
+      var div = document.createElement('div');
+      div.className = 'clsbar';
+      div.innerHTML = '<b>' + name + '</b><div class="t"><i style="width:0"></i></div><div class="p">0%</div>';
+      classBox.appendChild(div);
+      rendered[name] = div;
+    }
+    var el = rendered[name];
+    el.className = 'clsbar' + (pct === best && pct > 0 ? ' lead' : '');
+    el.querySelector('.t i').style.width = pct + '%';
+    el.querySelector('.p').textContent = pct + '%';
+  }
 }
 
-for (i = 0; i < classes.length; i++) {
-  var pct = Math.round(classes[i].v / classes[i].t * 100);
-  var div = document.createElement('div');
-  div.className = 'clsbar' + (pct === best ? ' lead' : '');
-  div.innerHTML = '<b>' + classes[i].n + '</b><div class="t"><i style="width:0"></i></div><div class="p">' + pct + '%</div>';
-  box.appendChild(div);
-  (function (el, w) {
-    setTimeout(function () { el.querySelector('.t i').style.width = w + '%'; }, 400 + Math.random() * 500);
-  })(div, pct);
-}
-
-function paint() {
-  var pct = Math.round(voted / TOTAL * 100);
+function paintTurnout() {
+  var pct = TOTAL > 0 ? Math.round(voted / TOTAL * 100) : 0;
   document.getElementById('pc').textContent = pct;
-  document.getElementById('arc').style.strokeDashoffset = String(402 - 402 * pct / 100);
+  document.getElementById('arc').style.strokeDashoffset = String(arcMax - arcMax * pct / 100);
+  var big = document.getElementById('big');
+  if (lastVoted < 0) { countUp(big, voted, 1200); }
+  else { big.textContent = fmt(voted); }
+  lastVoted = voted;
 }
 
-setTimeout(function () {
-  countUp(document.getElementById('big'), voted, 1500);
-  paint();
-}, 400);
+/* ดึงข้อมูลจริงทุก 5 วินาที backend cache ไว้ 10 วิ จึงไม่กระแทกชีต */
+function pull() {
+  API.call('live', {}, function (data) {
+    TOTAL = data.total || TOTAL;
+    voted = data.voted || 0;
+    paintTurnout();
+    if (data.byGrade) { renderClasses(data.byGrade); }
 
-/* จำลองคะแนนไหลเข้าแบบสด — ของจริงดึงจาก CacheService ทุก 5 วินาที */
-setInterval(function () {
-  if (voted >= TOTAL) { return; }
-  voted += Math.floor(Math.random() * 3);
-  document.getElementById('big').textContent = fmt(voted);
-  paint();
-}, 5000);
+    /* ถ้า backend บอกว่าปิดหีบแล้ว สลับไปโชว์ผลอัตโนมัติ */
+    if ((data.status === 'closed' || data.status === 'published') && !resultsShown) {
+      showResults();
+    }
+  }, function () { /* เงียบไว้ จอฉายไม่ควรมี error เด้ง */ });
+}
 
-/* นับถอยหลัง */
-var end = new Date().getTime() + (2 * 3600 + 41 * 60 + 8) * 1000;
+pull();
+setInterval(pull, 5000);
+
+/* นับถอยหลัง — ของจริงอ่าน closeAt จาก Config ตอนนี้ยังไม่ได้ต่อ ใช้ประมาณไปก่อน */
+var end = new Date().getTime() + (2 * 3600 + 41 * 60) * 1000;
 setInterval(function () {
   var s = Math.floor(Math.max(0, end - new Date().getTime()) / 1000);
   document.getElementById('cd').textContent =
     pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
 }, 1000);
 
-/* สลับมุมมองหลังปิดหีบ */
-var open = false;
-var scores = [
-  { no: 1, nm: 'ละลมก้าวหน้า', s: 118 },
-  { no: 2, nm: 'รวมใจบ้านละลม', s: 96 },
-  { no: 3, nm: 'เพื่อนพัฒนา', s: 47 },
-  { no: 0, nm: 'ไม่ประสงค์ลงคะแนน', s: 7 }
-];
+/* ผลคะแนน — ดึงจริงจาก results ซึ่ง backend จะล็อกไว้จนกว่าจะปิดหีบ */
+var resultsShown = false;
+var PARTY = { '1': 'ละลมก้าวหน้า', '2': 'รวมใจบ้านละลม', '3': 'เพื่อนพัฒนา', '0': 'ไม่ประสงค์ลงคะแนน' };
 
-document.getElementById('toggle').onclick = function () {
-  open = !open;
-  this.textContent = open ? 'กลับมุมมองระหว่างเปิดหีบ' : 'ดูมุมมองหลังปิดหีบ';
-  document.getElementById('locked').style.display = open ? 'none' : 'block';
-  var box2 = document.getElementById('results');
-  box2.style.display = open ? 'block' : 'none';
-  if (!open) { return; }
+function showResults() {
+  API.call('results', {}, function (data) {
+    if (data.locked) {
+      Swal.fire({
+        icon: 'info',
+        title: 'ยังเปิดผลไม่ได้',
+        html: 'คะแนนรายหมายเลขจะแสดงได้หลังผู้ดูแลระบบกดปิดหีบเท่านั้น',
+        confirmButtonText: 'เข้าใจแล้ว'
+      });
+      return;
+    }
+    resultsShown = true;
+    document.getElementById('locked').style.display = 'none';
+    var wrap = document.getElementById('results');
+    wrap.style.display = 'block';
+    document.getElementById('toggle').style.display = 'none';
 
-  var max = scores[0].s;
-  var html = '';
-  for (var k = 0; k < scores.length; k++) {
-    html += '<div class="cnd"><div class="bignum"' + (scores[k].no === 0 ? ' style="border-style:dashed;font-size:1.4rem;line-height:1.9"' : '') + '>' +
-            (scores[k].no === 0 ? '—' : scores[k].no) + '</div>' +
-            '<div><div class="nm">' + scores[k].nm + '</div><div class="t"><i data-w="' + Math.round(scores[k].s / max * 100) + '" style="width:0"></i></div></div>' +
-            '<div class="sc">' + scores[k].s + '</div></div>';
-  }
-  box2.innerHTML = html;
+    var order = ['1', '2', '3', '0'];
+    var max = 1;
+    for (var k = 0; k < order.length; k++) { max = Math.max(max, data.tally[order[k]] || 0); }
 
-  var bars = box2.querySelectorAll('.t i');
-  for (var j = 0; j < bars.length; j++) {
-    (function (b) {
-      setTimeout(function () { b.style.width = b.getAttribute('data-w') + '%'; }, 120);
-    })(bars[j]);
-  }
+    var html = '';
+    for (var i = 0; i < order.length; i++) {
+      var c = order[i];
+      var sc = data.tally[c] || 0;
+      html += '<div class="cnd"><div class="bignum"' + (c === '0' ? ' style="border-style:dashed;font-size:1.4rem;line-height:1.9"' : '') + '>' +
+              (c === '0' ? '—' : c) + '</div>' +
+              '<div><div class="nm">' + PARTY[c] + '</div><div class="t"><i data-w="' + Math.round(sc / max * 100) + '" style="width:0"></i></div></div>' +
+              '<div class="sc">' + sc + '</div></div>';
+    }
+    wrap.innerHTML = html;
 
-  Swal.fire({
-    icon: 'info',
-    title: 'นี่คือมุมมองหลังปิดหีบ',
-    html: 'ของจริงหน้านี้จะสลับเองอัตโนมัติเมื่อผู้ดูแลระบบกดปิดหีบ ไม่มีใครเปิดดูก่อนได้',
-    confirmButtonText: 'เข้าใจแล้ว'
-  });
-};
+    var bars = wrap.querySelectorAll('.t i');
+    for (var j = 0; j < bars.length; j++) {
+      (function (b) { setTimeout(function () { b.style.width = b.getAttribute('data-w') + '%'; }, 150); })(bars[j]);
+    }
+  }, function (msg) { toastError(msg); });
+}
+
+document.getElementById('toggle').onclick = showResults;
+</script>
 </script>
 </body>
 </html>
