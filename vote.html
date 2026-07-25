@@ -63,7 +63,7 @@
 
         <div class="row" data-v="0" tabindex="0" role="button" style="background:var(--paper)">
           <div class="no" style="border-style:dashed;font-size:1.2rem;line-height:2.1">—</div>
-          <div><div class="name">ไม่ประสงค์ลงคะแนน</div><div class="lead2">นับเป็นการใช้สิทธิ์ แต่ไม่นับให้หมายเลขใด</div></div>
+          <div><div class="name">บัตรเสีย</div><div class="lead2">บัตรที่ไม่เลือกหมายเลขใด หรือกาผิดกติกา</div></div>
           <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
         </div>
       </div>
@@ -113,7 +113,7 @@ function choose(row) {
   row.classList.add('picked');
   pick = row.getAttribute('data-v');
   submit.disabled = false;
-  submit.textContent = pick === '0' ? 'ยืนยัน — ไม่ประสงค์ลงคะแนน' : 'ยืนยัน — เลือกหมายเลข ' + pick;
+  submit.textContent = pick === '0' ? 'ยืนยัน — บัตรเสีย' : 'ยืนยัน — เลือกหมายเลข ' + pick;
 }
 
 for (var i = 0; i < rows.length; i++) {
@@ -124,7 +124,7 @@ for (var i = 0; i < rows.length; i++) {
 }
 
 submit.onclick = function () {
-  var who = pick === '0' ? 'ไม่ประสงค์ลงคะแนน'
+  var who = pick === '0' ? 'บัตรเสีย'
           : 'หมายเลข ' + pick + ' — ' + document.querySelector('.row.picked .name').textContent;
 
   Swal.fire({
@@ -137,15 +137,12 @@ submit.onclick = function () {
   }).then(function (r) {
     if (!r.isConfirmed) { return; }
 
-    Swal.fire({
-      title: 'กำลังหย่อนบัตร',
-      html: 'กำลังผูกบัตรเข้ากับลูกโซ่ตรวจสอบ',
-      allowOutsideClick: false,
-      didOpen: function () { Swal.showLoading(); }
-    });
+    showLoading('กำลังหย่อนบัตร', 'ผูกบัตรเข้ากับลูกโซ่ตรวจสอบ');
 
     API.call('castBallot', { voteToken: voteToken, choice: pick }, function (data) {
       try { sessionStorage.removeItem('el_vote'); } catch (e) {}
+      /* ในคูหาพูดกลางๆ ไม่ขานเบอร์ เพื่อไม่ให้คนข้างๆ รู้ว่าเลือกอะไร */
+      Voice.say('รับบัตรของคุณเรียบร้อยแล้ว ขอบคุณที่มาใช้สิทธิ์');
       receipt(who, data);
     }, function (msg) {
       Swal.fire({
