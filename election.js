@@ -1,6 +1,77 @@
 /* ระบบเลือกตั้งสภานักเรียน โรงเรียนบ้านละลม
    สคริปต์ร่วมทุกหน้า — ES5 เท่านั้น (ห้าม let/const/arrow/template literal) */
 
+/* ================= ระบบเสียงประกาศ (Web Speech API) ================= */
+
+var Voice = {
+  ready: false,
+  thVoice: null,
+  enabled: true,
+
+  init: function () {
+    if (!('speechSynthesis' in window)) { return; }
+    Voice.ready = true;
+    Voice.pickVoice();
+    /* เสียงบางเครื่องโหลดช้า ต้องรอ event */
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = Voice.pickVoice;
+    }
+    try { Voice.enabled = localStorage.getItem('el_voice') !== 'off'; } catch (e) {}
+  },
+
+  pickVoice: function () {
+    if (!Voice.ready) { return; }
+    var voices = speechSynthesis.getVoices();
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang && voices[i].lang.indexOf('th') === 0) { Voice.thVoice = voices[i]; return; }
+    }
+  },
+
+  /* พูดข้อความ ถ้าปิดเสียงไว้จะข้าม opts.onend เรียกเมื่อพูดจบ (ใช้กับโหมดอัตโนมัติ) */
+  say: function (text, opts) {
+    opts = opts || {};
+    if (!Voice.ready || !Voice.enabled) {
+      /* ถ้าปิดเสียง ยังต้องเรียก onend เพื่อให้โหมดอัตโนมัติเดินต่อได้ ประมาณเวลาจากความยาว */
+      if (opts.onend) { setTimeout(opts.onend, Math.max(text.length * 90, 800)); }
+      return;
+    }
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      if (Voice.thVoice) { u.voice = Voice.thVoice; }
+      u.lang = 'th-TH';
+      u.rate = opts.rate || 0.75;
+      u.pitch = opts.pitch || 1;
+      u.volume = opts.volume || 1;
+      if (opts.onend) {
+        u.onend = opts.onend;
+        u.onerror = opts.onend;
+      }
+      speechSynthesis.speak(u);
+    } catch (e) { if (opts.onend) { setTimeout(opts.onend, 1200); } }
+  },
+
+  /* ขานผลบัตรแบบกรรมการ เว้นจังหวะแบบขานสลาก — ใช้เฉพาะตอนนับคะแนนหลังปิดหีบ
+     ใส่จุดไข่ปลาให้เสียงหยุดเป็นช่วง จะฟังเป็นทางการและจดตามทัน */
+  callBallot: function (choice, partyName) {
+    if (choice === '0' || choice === 0) {
+      Voice.say('บัตรเสีย ... ไม่ประสงค์ลงคะแนน', { rate: 0.6 });
+    } else {
+      var msg = 'บัตรดี ... หมายเลข ... ' + choice;
+      if (partyName) { msg += ' ... ' + partyName; }
+      Voice.say(msg, { rate: 0.6 });
+    }
+  },
+
+  toggle: function () {
+    Voice.enabled = !Voice.enabled;
+    try { localStorage.setItem('el_voice', Voice.enabled ? 'on' : 'off'); } catch (e) {}
+    if (Voice.enabled) { Voice.say('เปิดเสียงประกาศ'); }
+    else { try { speechSynthesis.cancel(); } catch (e) {} }
+    return Voice.enabled;
+  }
+};
+
 /* ================= ระบบธีม สว่าง/มืด/อัตโนมัติ ================= */
 
 var Theme = {
@@ -41,6 +112,7 @@ var PAGES = [
   { f: 'booth.html',  t: 'คูหา',          s: 'สแกนบัตร ตรวจใบหน้า' },
   { f: 'vote.html',   t: 'บัตรลงคะแนน',   s: 'กาบัตรในคูหา' },
   { f: 'admin.html',  t: 'แอดมิน',        s: 'แผงควบคุมระบบ' },
+  { f: 'count.html',  t: 'ขานคะแนน',      s: 'นับหลังปิดหีบ' },
   { f: 'login.html',  t: 'เข้าสู่ระบบ',   s: 'สำหรับเจ้าหน้าที่' }
 ];
 
@@ -192,6 +264,42 @@ function unlockBtn(btn) {
   if (l) { btn.textContent = l; }
 }
 
+/* ================= กล่องโหลดแบบหมุน (ใช้ร่วมทุกหน้า) ================= */
+
+function spinnerHtml() {
+  return '<div class="el-spin" aria-hidden="true">' +
+    '<svg viewBox="0 0 50 50" width="64" height="64">' +
+    '<circle cx="25" cy="25" r="20" fill="none" stroke="var(--violet-soft)" stroke-width="5"/>' +
+    '<circle cx="25" cy="25" r="20" fill="none" stroke="var(--violet)" stroke-width="5" ' +
+    'stroke-linecap="round" stroke-dasharray="90 150" transform="rotate(-90 25 25)"/>' +
+    '</svg></div>';
+}
+
+/* เปิดกล่องโหลดหมุน คืน promise ปิดด้วย Swal.close() */
+function showLoading(title, sub) {
+  if (typeof Swal === 'undefined') { return; }
+  Swal.fire({
+    title: title || 'กำลังโหลด',
+    html: spinnerHtml() + (sub ? '<div class="el-spin-sub">' + sub + '</div>' : ''),
+    showConfirmButton: false,
+    allowOutsideClick: false,
+    allowEscapeKey: false
+  });
+}
+
+/* ฉีด CSS ของ spinner ครั้งเดียว */
+(function injectSpinnerCss() {
+  if (document.getElementById('el-spin-css')) { return; }
+  var st = document.createElement('style');
+  st.id = 'el-spin-css';
+  st.textContent =
+    '.el-spin{display:flex;justify-content:center;padding:14px 0 6px}' +
+    '.el-spin svg{animation:el-rot 1s linear infinite}' +
+    '.el-spin-sub{font-family:"Bai Jamjuree",sans-serif;font-size:.9rem;color:var(--ink-soft);margin-top:6px}' +
+    '@keyframes el-rot{to{transform:rotate(360deg)}}';
+  document.head.appendChild(st);
+})();
+
 /* ================= แจ้งเตือน ================= */
 
 function toastError(msg) {
@@ -311,4 +419,5 @@ document.addEventListener('DOMContentLoaded', function () {
   buildShell();
   watchNet();
   initReveal();
+  Voice.init();
 });
