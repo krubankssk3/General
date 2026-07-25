@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ขานคะแนน — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .count-wrap { max-width: 860px; margin: 0 auto; }
+  .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+  .mode-tab { border: 2px solid var(--rule); background: var(--card); padding: 18px; border-radius: 6px; cursor: pointer; text-align: left; transition: all .18s; }
+  .mode-tab:hover { border-color: var(--violet); }
+  .mode-tab.on { border-color: var(--violet); background: var(--violet-soft); }
+  .mode-tab strong { display: block; font-family: 'Bai Jamjuree', sans-serif; font-size: 1.05rem; font-weight: 600; margin-bottom: 3px; }
+  .mode-tab span { font-size: .82rem; color: var(--ink-faint); }
+  .card-stage { border: 2px solid var(--ink); background: var(--card); padding: 32px 40px; text-align: center; min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+  .seq-badge { position: absolute; top: 16px; left: 20px; font-family: 'IBM Plex Mono', monospace; font-size: .82rem; color: var(--ink-faint); }
+  .rec-badge { position: absolute; top: 16px; right: 20px; display: flex; align-items: center; gap: 7px; font-family: 'Bai Jamjuree', sans-serif; font-size: .78rem; color: var(--stamp); }
+  .rec-badge i { width: 9px; height: 9px; border-radius: 50%; background: var(--stamp); animation: pulse 1.4s infinite; }
+  .good-stamp { display: inline-block; font-family: 'Bai Jamjuree', sans-serif; font-size: .92rem; font-weight: 600; color: var(--verify); border: 2px solid var(--verify); border-radius: 100px; padding: 5px 20px; transform: rotate(-6deg); margin-bottom: 18px; opacity: 0; transition: opacity .3s; }
+  .good-stamp.show { opacity: 1; }
+  .bignum-c { font-family: 'Bai Jamjuree', sans-serif; font-size: 7.5rem; font-weight: 700; line-height: 1; color: var(--violet); transition: transform .35s cubic-bezier(.34,1.7,.5,1), opacity .25s; }
+  .bignum-c.blank { font-size: 4rem; color: var(--ink-faint); }
+  .party-c { font-family: 'Bai Jamjuree', sans-serif; font-size: 1.5rem; font-weight: 600; color: var(--ink); margin-top: 8px; min-height: 1.5rem; }
+  .hash-c { font-family: 'IBM Plex Mono', monospace; font-size: .78rem; color: var(--ink-faint); margin-top: 14px; }
+  .confirm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+  .auto-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin-top: 18px; }
+  .tally-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
+  .tally-cell { border: 1px solid var(--rule); background: var(--card); padding: 16px; text-align: center; transition: all .2s; }
+  .tally-cell .n { font-family: 'Bai Jamjuree', sans-serif; font-size: 2.2rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tally-cell .l { font-size: .76rem; color: var(--ink-faint); }
+  .tally-cell.hot { border-color: var(--violet); background: var(--violet-soft); }
+  .progress-c { font-family: 'IBM Plex Mono', monospace; font-size: .85rem; color: var(--ink-faint); text-align: center; margin-top: 16px; }
+  .waiting { color: var(--amber); font-family: 'Bai Jamjuree', sans-serif; font-weight: 500; }
+  @media (max-width: 700px) { .tally-grid { grid-template-columns: repeat(2, 1fr); } .bignum-c { font-size: 5.5rem; } .confirm-row, .auto-row { grid-template-columns: 1fr; } .mode-tabs { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body data-page="count.html" data-title="ขานคะแนน" data-sub="นับคะแนนหลังปิดหีบ" data-doc="ใช้ได้หลังปิดหีบ">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+
+  <div class="wrap">
+  <div class="sheet">
+
+    <section style="padding-top:28px" class="reveal">
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:20px">
+        <span class="eyebrow" style="margin:0">ขานคะแนน</span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <label style="margin:0;display:flex;align-items:center;gap:8px">
+            <span style="font-family:'Bai Jamjuree',sans-serif;font-size:.85rem">ความเร็ว</span>
+            <select id="voiceRate" style="width:auto;padding:8px 12px;font-size:.85rem">
+              <option value="0.5">ช้าที่สุด</option>
+              <option value="0.6" selected>ช้า (แนะนำ)</option>
+              <option value="0.72">ปานกลาง</option>
+              <option value="0.85">เร็วขึ้น</option>
+              <option value="1">ปกติ</option>
+            </select>
+          </label>
+          <label style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="voiceOn" checked style="width:auto;padding:0">
+            <span style="font-family:'Bai Jamjuree',sans-serif;font-size:.85rem">เปิดเสียง</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="count-wrap">
+
+        <div class="mode-tabs" id="modeTabs">
+          <button class="mode-tab on" data-mode="manual"><strong>ยืนยันทีละใบ</strong><span>กรรมการกดเห็นด้วยทุกใบ ควบคุมเองทั้งหมด</span></button>
+          <button class="mode-tab" data-mode="auto"><strong>อ่านอัตโนมัติ</strong><span>ระบบไล่ขานเองต่อเนื่องหลังปิดหีบ กดหยุดได้</span></button>
+        </div>
+
+        <div class="card-stage" id="stage">
+          <div class="seq-badge" id="seq"></div>
+          <div class="rec-badge" id="rec" style="display:none"><i></i> กำลังบันทึกภาพ</div>
+          <div class="good-stamp" id="stamp">บัตรดี</div>
+          <div class="bignum-c blank" id="bignum">พร้อม</div>
+          <div class="party-c" id="party"></div>
+          <div class="hash-c" id="hash">เลือกโหมดแล้วกดเริ่มเพื่อขานคะแนน</div>
+        </div>
+
+        <div id="controls">
+          <button class="btn primary wide xl" id="start" style="margin-top:18px">เริ่มขานคะแนน</button>
+
+          <div class="confirm-row" id="confirmRow" style="display:none">
+            <button class="btn primary xl" id="confirm">เห็นด้วย ใบถัดไป</button>
+            <button class="btn ghost" id="replay">ขานซ้ำใบนี้</button>
+          </div>
+
+          <div class="auto-row" id="autoRow" style="display:none">
+            <button class="btn danger xl" id="pause">หยุดชั่วคราว</button>
+            <button class="btn ghost" id="resume" style="display:none">เล่นต่อ</button>
+          </div>
+        </div>
+
+        <div class="progress-c" id="progress">ยังไม่เริ่ม</div>
+
+        <div class="tally-grid" id="tally">
+          <div class="tally-cell" data-c="1"><div class="n" id="t1">0</div><div class="l">เบอร์ 1 ละลมก้าวหน้า</div></div>
+          <div class="tally-cell" data-c="2"><div class="n" id="t2">0</div><div class="l">เบอร์ 2 รวมใจบ้านละลม</div></div>
+          <div class="tally-cell" data-c="3"><div class="n" id="t3">0</div><div class="l">เบอร์ 3 เพื่อนพัฒนา</div></div>
+          <div class="tally-cell" data-c="0"><div class="n" id="t0">0</div><div class="l">บัตรเสีย</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <span class="eyebrow">สองโหมดต่างกันอย่างไร</span>
+      <div class="grid g2" style="margin-top:16px" id="how">
+        <div class="card reveal"><h3>ยืนยันทีละใบ</h3><p class="muted">เหมาะกับการนับต่อหน้าที่ประชุมอย่างเป็นทางการ ระบบขานแล้วรอกรรมการกด "เห็นด้วย" ทุกใบ ไม่มีใบไหนถูกนับโดยไม่มีคนกำกับ ควบคุมจังหวะได้เต็มที่</p></div>
+        <div class="card reveal"><h3>อ่านอัตโนมัติ</h3><p class="muted">เหมาะกับการนับเร็วหลังปิดหีบ ระบบไล่ขานเองทีละใบ เว้นจังหวะสั้นๆ ให้ฟังทัน กดหยุดชั่วคราวหรือเล่นต่อได้ตลอด และสรุปยอดทุก 50 ใบ</p></div>
+      </div>
+      <div class="card tint reveal" style="margin-top:16px">
+        <h3>ข้อแนะนำ ควรบันทึกวิดีโอตอนขาน</h3>
+        <p class="lead" style="font-size:.92rem">เปิดสวิตช์ "กำลังบันทึกภาพ" เพื่อเตือนให้มีคนถ่ายวิดีโอการนับไว้ เป็นหลักฐานว่านับต่อหน้าที่ประชุมจริง ระบบไม่ได้อัดวิดีโอเอง เป็นแค่ตัวเตือน</p>
+        <label style="margin-top:12px;display:inline-flex;align-items:center;gap:9px;cursor:pointer">
+          <input type="checkbox" id="recToggle" style="width:auto;padding:0">
+          <span style="font-family:'Bai Jamjuree',sans-serif;font-weight:500">แสดงป้ายเตือนกำลังบันทึกภาพ</span>
+        </label>
+      </div>
+    </section>
+
+  </div>
+  </div>
+
+  <div class="foot">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+if (!Session.guard()) { throw new Error('redirect'); }
+stagger('#how .reveal', 110);
+
+var PARTY = { '1': 'ละลมก้าวหน้า', '2': 'รวมใจบ้านละลม', '3': 'เพื่อนพัฒนา', '0': '' };
+var SUMMARY_EVERY = 50;
+var AUTO_GAP = 650;   /* เว้นจังหวะระหว่างใบในโหมดอัตโนมัติ (มิลลิวินาที) หลังพูดจบ */
+
+var mode = 'manual';
+var tally = { '1': 0, '2': 0, '3': 0, '0': 0 };
+var idx = 0;
+var total = 0;
+var pending = null;
+var loading = false;
+var running = false;
+var autoTimer = null;
+
+/* ---- สลับโหมด ---- */
+var tabs = document.querySelectorAll('.mode-tab');
+for (var t = 0; t < tabs.length; t++) {
+  tabs[t].onclick = function () {
+    if (idx > 0) { return; }   /* เริ่มนับแล้วเปลี่ยนโหมดไม่ได้ */
+    for (var k = 0; k < tabs.length; k++) { tabs[k].classList.remove('on'); }
+    this.classList.add('on');
+    mode = this.getAttribute('data-mode');
+    document.getElementById('start').textContent =
+      mode === 'auto' ? 'เริ่มอ่านอัตโนมัติ' : 'เริ่มขานคะแนน';
+  };
+}
+
+document.getElementById('voiceOn').onchange = function () {
+  Voice.enabled = this.checked;
+  try { localStorage.setItem('el_voice', this.checked ? 'on' : 'off'); } catch (e) {}
+};
+document.getElementById('recToggle').onchange = function () {
+  document.getElementById('rec').style.display = this.checked ? 'flex' : 'none';
+};
+
+/* ---- ดึงบัตรใบถัดไป ---- */
+function fetchNext(afterShow) {
+  if (loading) { return; }
+  loading = true;
+  document.getElementById('hash').innerHTML = spinnerInline() + '<span class="waiting"> กำลังดึงบัตรใบถัดไป…</span>';
+
+  API.call('countStream', { from: idx, count: 1 }, function (data) {
+    loading = false;
+    total = data.total;
+    if (!data.ballots.length) { finish(); return; }
+    pending = data.ballots[0];
+    presentBallot(pending, afterShow);
+  }, function (msg) {
+    loading = false;
+    stopAuto();
+    Swal.fire({ icon: 'error', title: 'ดึงบัตรไม่ได้', html: msg, confirmButtonText: 'ปิด' });
+  });
+}
+
+function spinnerInline() {
+  return '<svg viewBox="0 0 50 50" width="18" height="18" style="vertical-align:-3px;animation:el-rot 1s linear infinite">' +
+    '<circle cx="25" cy="25" r="20" fill="none" stroke="var(--violet-soft)" stroke-width="6"/>' +
+    '<circle cx="25" cy="25" r="20" fill="none" stroke="var(--violet)" stroke-width="6" stroke-linecap="round" stroke-dasharray="80 150" transform="rotate(-90 25 25)"/></svg>';
+}
+
+/* ---- แสดงบัตร ปั๊มกากบาท ขานเสียง ---- */
+function presentBallot(b, afterShow) {
+  var big = document.getElementById('bignum');
+  var party = document.getElementById('party');
+  var hash = document.getElementById('hash');
+  var stamp = document.getElementById('stamp');
+
+  document.getElementById('seq').textContent = 'ใบที่ ' + (idx + 1) + ' จาก ' + total;
+  big.style.transform = 'scale(.4)';
+  big.style.opacity = '0';
+  stamp.classList.remove('show');
+
+  setTimeout(function () {
+    if (b.choice === '0') {
+      big.className = 'bignum-c blank';
+      big.textContent = '—';
+      party.textContent = 'บัตรเสีย';
+      stamp.textContent = 'บัตรเสีย';
+      stamp.style.color = 'var(--stamp)';
+      stamp.style.borderColor = 'var(--stamp)';
+    } else {
+      big.className = 'bignum-c';
+      big.textContent = b.choice;
+      party.textContent = PARTY[b.choice] || '';
+      stamp.textContent = 'บัตรดี';
+      stamp.style.color = 'var(--verify)';
+      stamp.style.borderColor = 'var(--verify)';
+    }
+    var tail = String(b.hash || '').slice(-8);
+    hash.innerHTML = 'บัตรเลขที่ ' + b.ballotId + (tail ? ' &middot; ลายนิ้วมือ ' + tail : '');
+    stamp.classList.add('show');
+    big.style.transform = 'scale(1)';
+    big.style.opacity = '1';
+
+    sayBallot(b.choice, afterShow);
+  }, 180);
+}
+
+function sayBallot(choice, onDone) {
+  var rate = parseFloat(document.getElementById('voiceRate').value) || 0.6;
+  var msg = (choice === '0')
+    ? 'บัตรเสีย ... ไม่ประสงค์ลงคะแนน'
+    : 'บัตรดี ... หมายเลข ... ' + choice + (PARTY[choice] ? ' ... ' + PARTY[choice] : '');
+  Voice.say(msg, { rate: rate, onend: onDone });
+}
+
+/* ---- นับใบที่กำลังแสดง ---- */
+function tallyPending() {
+  if (!pending) { return; }
+  var c = pending.choice;
+  tally[c] = (tally[c] || 0) + 1;
+  document.getElementById('t' + c).textContent = tally[c];
+  var cells = document.querySelectorAll('.tally-cell');
+  for (var i = 0; i < cells.length; i++) {
+    cells[i].classList.toggle('hot', cells[i].getAttribute('data-c') === c);
+  }
+  idx++;
+  pending = null;
+  document.getElementById('progress').textContent = 'นับแล้ว ' + idx + ' จาก ' + total + ' ใบ';
+}
+
+/* ================= โหมดยืนยันทีละใบ ================= */
+
+function startManual() {
+  document.getElementById('start').style.display = 'none';
+  document.getElementById('confirmRow').style.display = 'grid';
+  fetchNext();
+}
+
+document.getElementById('confirm').onclick = function () {
+  if (!pending) { return; }
+  tallyPending();
+  if (idx >= total) { finish(); return; }
+  if (idx % SUMMARY_EVERY === 0) { speakSummary(); setTimeout(fetchNext, 400); }
+  else { fetchNext(); }
+};
+
+document.getElementById('replay').onclick = function () {
+  if (pending) { sayBallot(pending.choice); }
+};
+
+/* ================= โหมดอ่านอัตโนมัติ ================= */
+
+function startAuto() {
+  document.getElementById('start').style.display = 'none';
+  document.getElementById('autoRow').style.display = 'grid';
+  document.getElementById('modeTabs').style.opacity = '.5';
+  document.getElementById('modeTabs').style.pointerEvents = 'none';
+  running = true;
+  autoStep();
+}
+
+/* วนอ่านทีละใบ: ดึง → แสดง → พูด → พอพูดจบเว้น AUTO_GAP → นับ → ใบต่อไป */
+function autoStep() {
+  if (!running) { return; }
+  fetchNext(function () {
+    if (!running) { return; }
+    autoTimer = setTimeout(function () {
+      tallyPending();
+      if (idx >= total) { finish(); return; }
+      if (idx % SUMMARY_EVERY === 0) {
+        speakSummary();
+        autoTimer = setTimeout(autoStep, 3200);   /* หลังสรุปเว้นนานหน่อย */
+      } else {
+        autoStep();
+      }
+    }, AUTO_GAP);
+  });
+}
+
+document.getElementById('pause').onclick = function () {
+  running = false;
+  if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+  try { speechSynthesis.cancel(); } catch (e) {}
+  this.style.display = 'none';
+  document.getElementById('resume').style.display = 'inline-flex';
+  document.getElementById('progress').textContent = 'หยุดชั่วคราว ที่ใบ ' + idx + ' จาก ' + total;
+};
+
+document.getElementById('resume').onclick = function () {
+  running = true;
+  this.style.display = 'none';
+  document.getElementById('pause').style.display = 'inline-flex';
+  /* ถ้ามีใบค้างที่ยังไม่นับ ให้นับแล้วไปต่อ ไม่งั้นดึงใบใหม่ */
+  if (pending) {
+    tallyPending();
+    if (idx >= total) { finish(); return; }
+  }
+  autoStep();
+};
+
+function stopAuto() {
+  running = false;
+  if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+}
+
+/* ================= ร่วมกัน ================= */
+
+document.getElementById('start').onclick = function () {
+  if (mode === 'auto') { startAuto(); } else { startManual(); }
+};
+
+function speakSummary() {
+  var lead = '1';
+  ['2', '3'].forEach(function (c) { if (tally[c] > tally[lead]) { lead = c; } });
+  var rate = parseFloat(document.getElementById('voiceRate').value) || 0.6;
+
+  Swal.fire({
+    icon: 'info',
+    title: 'สรุปยอด ' + idx + ' ใบ',
+    html: 'เบอร์ 1 ได้ <b>' + tally['1'] + '</b> &middot; เบอร์ 2 ได้ <b>' + tally['2'] +
+          '</b> &middot; เบอร์ 3 ได้ <b>' + tally['3'] + '</b><br>บัตรเสีย ' + tally['0'] + ' ใบ',
+    timer: 3000,
+    timerProgressBar: true,
+    showConfirmButton: false
+  });
+  Voice.say('ครบ ' + idx + ' ใบ ... เบอร์ ' + lead + ' ' + PARTY[lead] + ' นำอยู่ ' + tally[lead] + ' คะแนน', { rate: rate });
+}
+
+function finish() {
+  stopAuto();
+  document.getElementById('confirmRow').style.display = 'none';
+  document.getElementById('autoRow').style.display = 'none';
+  document.getElementById('progress').textContent = 'นับครบทั้ง ' + total + ' ใบแล้ว';
+  document.getElementById('seq').textContent = 'เสร็จสิ้น';
+
+  var winner = '1';
+  ['2', '3'].forEach(function (c) { if (tally[c] > tally[winner]) { winner = c; } });
+  var rate = parseFloat(document.getElementById('voiceRate').value) || 0.6;
+
+  Voice.say('ขานคะแนนครบทุกใบแล้ว ... รวม ' + total + ' ใบ ... ผู้ได้คะแนนสูงสุดคือ ... เบอร์ ' + winner + ' ... ' + PARTY[winner], { rate: rate });
+
+  Swal.fire({
+    icon: 'success',
+    title: 'ขานคะแนนครบแล้ว',
+    html: 'รวมทั้งหมด <b>' + total + '</b> ใบ<br><br>' +
+          'เบอร์ 1 ละลมก้าวหน้า &mdash; <b>' + tally['1'] + '</b><br>' +
+          'เบอร์ 2 รวมใจบ้านละลม &mdash; <b>' + tally['2'] + '</b><br>' +
+          'เบอร์ 3 เพื่อนพัฒนา &mdash; <b>' + tally['3'] + '</b><br>' +
+          'บัตรเสีย &mdash; <b>' + tally['0'] + '</b><br><br>' +
+          '<span style="color:var(--verify);font-weight:600">ผู้ชนะคือเบอร์ ' + winner + ' ' + PARTY[winner] + '</span>',
+    confirmButtonText: 'ปิด'
+  });
+}
+</script>
+</body>
+</html>
