@@ -1,6 +1,37 @@
 /* ระบบเลือกตั้งสภานักเรียน โรงเรียนบ้านละลม
    สคริปต์ร่วมทุกหน้า — ES5 เท่านั้น (ห้าม let/const/arrow/template literal) */
 
+/* ================= ระบบธีม สว่าง/มืด/อัตโนมัติ ================= */
+
+var Theme = {
+  KEY: 'el_theme',
+
+  get: function () {
+    try { return localStorage.getItem(Theme.KEY) || 'light'; } catch (e) { return 'light'; }
+  },
+
+  set: function (name) {
+    try { localStorage.setItem(Theme.KEY, name); } catch (e) {}
+    Theme.apply(name);
+    Theme.paintButtons(name);
+  },
+
+  apply: function (name) {
+    document.documentElement.setAttribute('data-theme', name);
+  },
+
+  paintButtons: function (name) {
+    var btns = document.querySelectorAll('.theme-pick button');
+    for (var i = 0; i < btns.length; i++) {
+      if (btns[i].getAttribute('data-theme') === name) { btns[i].classList.add('on'); }
+      else { btns[i].classList.remove('on'); }
+    }
+  }
+};
+
+/* ตั้งธีมทันทีก่อนหน้าจะ render กันกระพริบขาว */
+Theme.apply(Theme.get());
+
 var API_URL = (typeof CONFIG !== 'undefined' && CONFIG.API_URL) ? CONFIG.API_URL : '';
 var SCHOOL_LOGO = 'https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png';
 
@@ -33,8 +64,20 @@ function buildShell() {
               PAGES[i].t + '<small>' + PAGES[i].s + '</small></a>';
     }
 
-    html += '</nav><div class="side-foot">ปีการศึกษา 2569<br>สพป.ศรีสะเกษ เขต 3</div>';
+    html += '</nav>';
+    html += '<div class="theme-lbl">ธีมการแสดงผล</div>';
+    html += '<div class="theme-pick">' +
+      '<button data-theme="light">สว่าง</button>' +
+      '<button data-theme="dark">มืด</button>' +
+      '<button data-theme="auto">อัตโนมัติ</button></div>';
+    html += '<div class="side-foot">ปีการศึกษา 2569<br>สพป.ศรีสะเกษ เขต 3</div>';
     side.innerHTML = html;
+
+    var picks = side.querySelectorAll('.theme-pick button');
+    for (var p = 0; p < picks.length; p++) {
+      picks[p].onclick = function () { Theme.set(this.getAttribute('data-theme')); };
+    }
+    Theme.paintButtons(Theme.get());
   }
 
   if (top) {
