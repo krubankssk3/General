@@ -7,9 +7,11 @@
 <link rel="stylesheet" href="election.css">
 <style>
   .split { display:grid; grid-template-columns: 1.05fr .95fr; min-height: 560px; }
-  .aside { background: var(--ink); color:#EDEAF7; padding: 46px 40px; display:flex; flex-direction:column; justify-content:space-between; }
+  /* ใช้ --sidebar ที่เข้มเสมอทุกธีม ไม่ใช่ --ink ที่พลิกสีในธีมมืด */
+  .aside { background: var(--sidebar); color: var(--sidebar-ink); padding: 46px 40px; display:flex; flex-direction:column; justify-content:space-between; }
   .aside h2 { color:#fff; font-size:1.75rem; }
-  .stripe { height:14px; background: repeating-linear-gradient(45deg,#5B3FD6 0 10px,#3A2F5C 10px 20px); margin-bottom:30px; }
+  .aside p { color: var(--sidebar-faint); }
+  .stripe { height:14px; background: repeating-linear-gradient(45deg,var(--violet) 0 10px,var(--sidebar-hover) 10px 20px); margin-bottom:30px; }
   .role { border:1px solid var(--rule); border-radius:3px; padding:11px 13px; cursor:pointer; text-align:left; background:var(--card); font-family:'Bai Jamjuree',sans-serif; font-size:.83rem; font-weight:500; color:var(--ink); transition:border-color .15s,background .15s; }
   .role:hover { border-color: var(--violet); }
   .role.on { border-color: var(--violet); background: var(--violet-soft); }
