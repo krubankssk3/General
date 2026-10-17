@@ -161,39 +161,136 @@ function liveCheckIn() {
     }
   }).then(function (r) {
     if (!r.isConfirmed) { return; }
-
     showLoading('กำลังตรวจสอบ', 'ค้นทะเบียนผู้มีสิทธิ์');
 
-    API.call('checkIn', { studentId: r.value }, function (data) {
-      /* ได้ VoteToken แล้ว ส่งต่อให้หน้าบัตรผ่าน sessionStorage ไม่ผ่าน URL กันหลุด */
-      try { sessionStorage.setItem('el_vote', data.voteToken); } catch (e) {}
-
-      document.getElementById('who').innerHTML =
-        '<div style="display:flex;gap:14px;align-items:center">' +
-        '<div style="width:52px;height:52px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-family:\'Bai Jamjuree\',sans-serif;font-weight:600">' + esc(data.name).substring(0, 2) + '</div>' +
-        '<div><strong style="font-family:\'Bai Jamjuree\',sans-serif">' + esc(data.name) + '</strong>' +
-        '<div class="muted">ชั้น ' + esc(data.room) + ' \u00b7 เลขประจำตัว ' + esc(data.studentId) + '</div></div></div>' +
-        '<p class="mono" style="margin-top:12px;color:var(--verify)">ตรวจสิทธิ์ผ่าน \u00b7 ออกรหัสเข้าคูหาแล้ว</p>';
-
-      setStep(4);
-      view.innerHTML = '<div style="text-align:center;padding:26px"><div class="mono" style="color:#8C82B8;margin-bottom:12px">รหัสเข้าคูหา</div>' +
-        '<div style="font-family:\'Bai Jamjuree\',sans-serif;font-size:3.2rem;font-weight:700;letter-spacing:.14em;color:#fff">' + esc(data.voteToken) + '</div></div>';
-
-      Swal.fire({
-        icon: 'success',
-        title: 'ตรวจสิทธิ์ผ่าน',
-        html: '<b>' + esc(data.name) + '</b><br>เชิญนักเรียนเข้าคูหา',
-        confirmButtonText: 'ไปที่บัตรลงคะแนน'
-      }).then(function () { window.location.href = 'vote.html'; });
-
+    /* ขั้นที่ 1 probe ตรวจสิทธิ์ก่อน ยังไม่ออก token */
+    API.call('checkIn', { studentId: r.value, probe: true }, function (info) {
+      showStudent(info);
+      if (info.faceRequired && info.faceEnrolled) {
+        faceVerifyThenIssue(info);
+      } else if (info.faceRequired && !info.faceEnrolled) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ยังไม่ได้ลงทะเบียนใบหน้า',
+          html: '<b>' + esc(info.name) + '</b> อยู่ชั้นที่ต้องตรวจใบหน้า แต่ยังไม่มีข้อมูลใบหน้าในระบบ',
+          showDenyButton: true,
+          confirmButtonText: 'ยืนยันด้วยบัตร ออกรหัสเลย',
+          denyButtonText: 'ยกเลิก'
+        }).then(function (x) {
+          if (x.isConfirmed) { issueLive(info.studentId, 'ข้ามใบหน้า ยังไม่ลงทะเบียน'); }
+        });
+      } else {
+        issueLive(info.studentId, 'ป.1-ป.6 ยืนยันด้วยบัตร');
+      }
     }, function (msg) {
       Swal.fire({ icon: 'error', title: 'ตรวจสิทธิ์ไม่ผ่าน', html: msg, confirmButtonText: 'ลองใหม่' });
     });
   });
 }
 
+function showStudent(info) {
+  document.getElementById('who').innerHTML =
+    '<div style="display:flex;gap:14px;align-items:center">' +
+    '<div style="width:52px;height:52px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-family:\'Bai Jamjuree\',sans-serif;font-weight:600">' + esc(info.name).substring(0, 2) + '</div>' +
+    '<div><strong style="font-family:\'Bai Jamjuree\',sans-serif">' + esc(info.name) + '</strong>' +
+    '<div class="muted">ชั้น ' + esc(info.room) + ' · เลขประจำตัว ' + esc(info.studentId) + '</div></div></div>' +
+    '<p class="mono" style="margin-top:12px;color:var(--verify)">มีสิทธิ์ลงคะแนน</p>';
+}
+
+/* ขั้นที่ 2 ตรวจใบหน้าด้วยกล้อง แล้วค่อยออก token */
+function faceVerifyThenIssue(info) {
+  Swal.fire({
+    title: 'ยืนยันใบหน้า',
+    html: '<video id="camv" autoplay playsinline style="width:100%;max-width:320px;border-radius:8px;background:#000;transform:scaleX(-1)"></video>' +
+          '<p class="mono" style="color:#8B849F;margin-top:8px">ให้นักเรียนมองกล้อง แล้วกดถ่าย</p>',
+    showCancelButton: true,
+    confirmButtonText: 'ถ่ายและตรวจ',
+    cancelButtonText: 'ยกเลิก',
+    allowOutsideClick: false,
+    didOpen: function () {
+      var v = document.getElementById('camv');
+      Camera.open(v, null, function (msg) {
+        Swal.close();
+        Swal.fire({
+          icon: 'error', title: 'เปิดกล้องไม่ได้', html: msg,
+          showDenyButton: true, confirmButtonText: 'ยืนยันด้วยบัตรแทน', denyButtonText: 'ยกเลิก'
+        }).then(function (x) {
+          if (x.isConfirmed) { issueLive(info.studentId, 'เปิดกล้องไม่ได้ ยืนยันด้วยบัตร'); }
+        });
+      });
+    },
+    preConfirm: function () {
+      var v = document.getElementById('camv');
+      if (!v || !v.videoWidth) { Swal.showValidationMessage('กล้องยังไม่พร้อม รอสักครู่'); return false; }
+      return Camera.snap(v);
+    }
+  }).then(function (r) {
+    Camera.close();
+    if (!r.isConfirmed) { return; }
+    showLoading('กำลังตรวจใบหน้า', 'เทียบกับภาพในทะเบียน');
+    API.call('verifyFace', { studentId: info.studentId, image: r.value }, function (res) {
+      if (res.pass) { issueLive(info.studentId, 'ใบหน้าตรง ' + res.confidence + '%'); }
+      else { faceFailOverride(info, res.confidence); }
+    }, function (msg) {
+      Swal.fire({
+        icon: 'error', title: 'ตรวจใบหน้าไม่สำเร็จ', html: msg,
+        showDenyButton: true, confirmButtonText: 'ยืนยันด้วยบัตรแทน', denyButtonText: 'ลองใหม่'
+      }).then(function (x) {
+        if (x.isConfirmed) { issueLive(info.studentId, 'ตรวจใบหน้าพลาด ยืนยันด้วยบัตร'); }
+        else { faceVerifyThenIssue(info); }
+      });
+    });
+  });
+}
+
+/* ใบหน้าไม่ตรงพอ ให้กรรมการยืนยันแทนพร้อมเหตุผล */
+function faceFailOverride(info, conf) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'ใบหน้าไม่ตรงพอ',
+    html: 'ค่าความเหมือน <b>' + conf + '%</b> ต่ำกว่าเกณฑ์<br>ให้กรรมการตรวจบัตรด้วยตา แล้วเลือกว่าจะยืนยันแทนหรือไม่',
+    showDenyButton: true,
+    confirmButtonText: 'ยืนยันแทนระบบ',
+    denyButtonText: 'ไม่ยืนยัน ลองถ่ายใหม่'
+  }).then(function (x) {
+    if (x.isConfirmed) {
+      Swal.fire({
+        title: 'ระบุเหตุผล', input: 'text',
+        inputPlaceholder: 'เช่น แสงย้อน ใส่แว่นใหม่ ตัดผม',
+        confirmButtonText: 'บันทึกและออกรหัส',
+        preConfirm: function (v) { if (!String(v || '').trim()) { Swal.showValidationMessage('ต้องระบุเหตุผล'); } return v; }
+      }).then(function (y) {
+        if (y.isConfirmed) { issueLive(info.studentId, 'กรรมการยืนยันแทน (' + conf + '%): ' + y.value); }
+      });
+    } else {
+      faceVerifyThenIssue(info);
+    }
+  });
+}
+
+/* ขั้นสุดท้าย เรียก checkIn จริงเพื่อออก token */
+function issueLive(studentId, note) {
+  showLoading('กำลังออกรหัสเข้าคูหา');
+  API.call('checkIn', { studentId: studentId, note: note }, function (data) {
+    try { sessionStorage.setItem('el_vote', data.voteToken); } catch (e) {}
+    setStep(4);
+    view.innerHTML = '<div style="text-align:center;padding:26px"><div class="mono" style="color:#8C82B8;margin-bottom:12px">รหัสเข้าคูหา</div>' +
+      '<div style="font-family:\'Bai Jamjuree\',sans-serif;font-size:3.2rem;font-weight:700;letter-spacing:.14em;color:#fff">' + esc(data.voteToken) + '</div></div>';
+    var doneEl = document.getElementById('done');
+    if (doneEl) { doneEl.textContent = parseInt(doneEl.textContent || '0', 10) + 1; }
+    Swal.fire({
+      icon: 'success',
+      title: 'ยืนยันตัวตนเรียบร้อย',
+      html: '<b>' + esc(data.name) + '</b><br><span class="mono" style="color:#8B849F">' + esc(note) + '</span><br>เชิญนักเรียนเข้าคูหา',
+      confirmButtonText: 'ไปที่บัตรลงคะแนน'
+    }).then(function () { window.location.href = 'vote.html'; });
+  }, function (msg) {
+    Swal.fire({ icon: 'error', title: 'ออกรหัสไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+}
+
 function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function doScan(mode) {
