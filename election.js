@@ -110,6 +110,7 @@ var PAGES = [
   { f: 'index.html',  t: 'หน้าหลัก',      s: 'ข้อมูลสำหรับทุกคน' },
   { f: 'live.html',   t: 'จอแสดงผล',      s: 'ฉายที่หอประชุม' },
   { f: 'booth.html',  t: 'คูหา',          s: 'สแกนบัตร ตรวจใบหน้า' },
+  { f: 'enroll.html', t: 'ลงทะเบียนใบหน้า', s: 'ทำก่อนวันเลือกตั้ง' },
   { f: 'vote.html',   t: 'บัตรลงคะแนน',   s: 'กาบัตรในคูหา' },
   { f: 'admin.html',  t: 'แอดมิน',        s: 'แผงควบคุมระบบ' },
   { f: 'count.html',  t: 'ขานคะแนน',      s: 'นับหลังปิดหีบ' },
@@ -404,6 +405,52 @@ function fileToBase64(file, cb, err) {
   r.onerror = function () { if (err) { err('อ่านไฟล์ไม่สำเร็จ'); } };
   r.readAsDataURL(file);
 }
+
+/* ================= กล้องถ่ายใบหน้า (getUserMedia) ================= */
+
+var Camera = {
+  stream: null,
+
+  /* เปิดกล้องแล้วแสดงใน element video ที่ให้มา คืน true ถ้าสำเร็จ */
+  open: function (videoEl, ok, fail) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (fail) { fail('อุปกรณ์นี้ไม่รองรับการใช้กล้อง'); }
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 360 }, audio: false })
+      .then(function (st) {
+        Camera.stream = st;
+        videoEl.srcObject = st;
+        videoEl.play();
+        if (ok) { ok(); }
+      })
+      .catch(function (e) {
+        var msg = 'เปิดกล้องไม่ได้';
+        if (e && e.name === 'NotAllowedError') { msg = 'ยังไม่ได้อนุญาตให้ใช้กล้อง กดอนุญาตแล้วลองใหม่'; }
+        else if (e && e.name === 'NotFoundError') { msg = 'ไม่พบกล้องบนอุปกรณ์นี้'; }
+        if (fail) { fail(msg); }
+      });
+  },
+
+  /* จับภาพนิ่งจาก video คืน base64 jpeg (ไม่มีส่วนหัว data:) */
+  snap: function (videoEl) {
+    var cv = document.createElement('canvas');
+    cv.width = videoEl.videoWidth || 480;
+    cv.height = videoEl.videoHeight || 360;
+    cv.getContext('2d').drawImage(videoEl, 0, 0, cv.width, cv.height);
+    var url = cv.toDataURL('image/jpeg', 0.82);
+    return url.substring(url.indexOf(',') + 1);
+  },
+
+  /* ปิดกล้อง คืนทรัพยากร */
+  close: function () {
+    if (Camera.stream) {
+      var tracks = Camera.stream.getTracks();
+      for (var i = 0; i < tracks.length; i++) { tracks[i].stop(); }
+      Camera.stream = null;
+    }
+  }
+};
 
 /* ================= เริ่มทำงาน ================= */
 
