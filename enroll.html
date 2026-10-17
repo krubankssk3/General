@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ลงทะเบียนใบหน้า — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .enroll-wrap { max-width: 720px; margin: 0 auto; }
+  .cam-box { aspect-ratio: 4/3; max-width: 420px; margin: 0 auto; background: #15102A; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
+  .cam-box video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  .cam-box .ph { color: var(--ink-faint); font-family: 'Bai Jamjuree', sans-serif; padding: 0 24px; text-align: center; }
+  .consent-box { background: var(--violet-soft); border: 1px solid #CFC4F5; padding: 18px; border-radius: 6px; margin: 16px 0; }
+</style>
+</head>
+<body data-page="enroll.html" data-title="ลงทะเบียนใบหน้า" data-sub="บันทึกใบหน้านักเรียนก่อนวันเลือกตั้ง" data-doc="เฉพาะ ม.1-ม.3">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+
+  <div class="wrap">
+  <div class="sheet">
+
+    <section style="padding-top:28px" class="reveal">
+      <span class="eyebrow">ลงทะเบียนใบหน้า</span>
+      <h2>บันทึกใบหน้านักเรียน</h2>
+      <p class="lead">ทำก่อนวันเลือกตั้ง เพื่อให้วันงานตรวจใบหน้าได้เร็ว เฉพาะนักเรียน ม.1 ถึง ม.3 ภาพที่ถ่ายจะถูกส่งไปสร้างรหัสใบหน้าแล้วลบทันที ไม่เก็บรูปไว้ที่ใด</p>
+
+      <div class="consent-box reveal">
+        <h3 style="margin-bottom:8px">ความยินยอมจากผู้ปกครอง</h3>
+        <p class="muted" style="margin-bottom:12px">ข้อมูลใบหน้าเป็นข้อมูลชีวมาตร ต้องได้รับความยินยอมจากผู้ปกครองก่อนบันทึก กรุณายืนยันว่าได้รับความยินยอมแล้ว</p>
+        <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-weight:400">
+          <input type="checkbox" id="consent" style="width:auto;padding:0;margin-top:3px">
+          <span>ข้าพเจ้ายืนยันว่าได้รับความยินยอมจากผู้ปกครองของนักเรียนคนนี้แล้ว</span>
+        </label>
+      </div>
+
+      <div class="enroll-wrap">
+        <div class="grid g2">
+          <div class="field">
+            <label for="sid">เลขประจำตัวนักเรียน</label>
+            <input id="sid" type="text" inputmode="numeric" placeholder="เช่น 13001">
+          </div>
+          <div class="field">
+            <label for="consentBy">ผู้ให้ความยินยอม</label>
+            <input id="consentBy" type="text" placeholder="เช่น นายสมชาย (บิดา)">
+          </div>
+        </div>
+
+        <div class="cam-box" id="camBox">
+          <div class="ph" id="camPh">กดปุ่มเปิดกล้องเพื่อเริ่ม</div>
+          <video id="video" autoplay playsinline style="display:none"></video>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+          <button class="btn ghost" id="openCam">เปิดกล้อง</button>
+          <button class="btn primary" id="capture" disabled>ถ่ายและบันทึก</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <span class="eyebrow">ข้อควรรู้</span>
+      <div class="grid g3" style="margin-top:16px" id="notes">
+        <div class="card reveal"><h3>ไม่เก็บรูป</h3><p class="muted">ระบบเก็บเฉพาะรหัสใบหน้า (face token) ไม่เก็บภาพถ่าย ทั้งตอนลงทะเบียนและตอนตรวจ</p></div>
+        <div class="card reveal"><h3>ถ่ายให้ชัด</h3><p class="muted">มีแสงพอ มองกล้องตรงๆ ไม่ใส่แมสก์หรือหมวก มีใบหน้าเดียวในภาพ</p></div>
+        <div class="card reveal"><h3>เฉพาะ ม.ต้น</h3><p class="muted">ป.1 ถึง ป.6 ใช้บัตรอย่างเดียว ไม่ต้องลงทะเบียนใบหน้า เพื่อลดภาระความยินยอมของเด็กเล็ก</p></div>
+      </div>
+    </section>
+
+  </div>
+  </div>
+
+  <div class="foot">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+if (!Session.guard()) { throw new Error('redirect'); }
+stagger('#notes .reveal', 110);
+
+var camReady = false;
+
+document.getElementById('openCam').onclick = function () {
+  var v = document.getElementById('video');
+  var ph = document.getElementById('camPh');
+  showLoading('กำลังเปิดกล้อง');
+  Camera.open(v, function () {
+    Swal.close();
+    ph.style.display = 'none';
+    v.style.display = 'block';
+    camReady = true;
+    document.getElementById('capture').disabled = false;
+  }, function (msg) {
+    Swal.fire({ icon: 'error', title: 'เปิดกล้องไม่ได้', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+document.getElementById('capture').onclick = function () {
+  var btn = this;
+  var sid = document.getElementById('sid').value.trim();
+  var consentBy = document.getElementById('consentBy').value.trim();
+
+  if (!document.getElementById('consent').checked) {
+    Swal.fire({ icon: 'warning', title: 'ต้องยืนยันความยินยอม', text: 'กรุณาติ๊กยืนยันว่าได้รับความยินยอมจากผู้ปกครองก่อน', confirmButtonText: 'ปิด' });
+    return;
+  }
+  if (!sid) { Swal.fire({ icon: 'warning', title: 'กรอกเลขประจำตัว', confirmButtonText: 'ปิด' }); return; }
+  if (!consentBy) { Swal.fire({ icon: 'warning', title: 'ระบุผู้ให้ความยินยอม', confirmButtonText: 'ปิด' }); return; }
+  if (!camReady) { Swal.fire({ icon: 'warning', title: 'เปิดกล้องก่อน', confirmButtonText: 'ปิด' }); return; }
+
+  var img = Camera.snap(document.getElementById('video'));
+  if (!lockBtn(btn, 'กำลังบันทึก…')) { return; }
+  showLoading('กำลังบันทึกใบหน้า', 'สร้างรหัสใบหน้าแล้วลบภาพทันที');
+
+  API.call('enrollFace', { studentId: sid, image: img, consentBy: consentBy }, function (data) {
+    unlockBtn(btn);
+    document.getElementById('sid').value = '';
+    document.getElementById('consentBy').value = '';
+    document.getElementById('consent').checked = false;
+    Swal.fire({
+      icon: 'success',
+      title: 'ลงทะเบียนใบหน้าแล้ว',
+      html: 'เลขประจำตัว <b>' + data.studentId + '</b> พร้อมใช้ตรวจใบหน้าในวันเลือกตั้ง',
+      confirmButtonText: 'ลงทะเบียนคนถัดไป'
+    });
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: msg, confirmButtonText: 'ลองใหม่' });
+  });
+};
+
+window.addEventListener('beforeunload', function () { Camera.close(); });
+</script>
+</body>
+</html>
