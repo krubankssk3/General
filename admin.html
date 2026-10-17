@@ -7,11 +7,11 @@
 <link rel="stylesheet" href="election.css">
 <style>
   .phase { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
-  .ph { border:1px solid var(--rule); background:var(--card); padding:16px 14px; text-align:left; cursor:pointer; border-radius:3px; transition:border-color .15s, background .15s; }
+  .ph { border:1px solid var(--rule); background:var(--card); color:var(--ink); padding:16px 14px; text-align:left; cursor:pointer; border-radius:3px; transition:border-color .15s, background .15s; }
   .ph:hover { border-color:var(--violet); }
   .ph .step { font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.16em; color:var(--ink-faint); }
-  .ph strong { display:block; font-family:'Bai Jamjuree',sans-serif; font-size:1rem; font-weight:600; margin:5px 0 3px; }
-  .ph span { font-size:.78rem; color:var(--ink-faint); }
+  .ph strong { display:block; font-family:'Bai Jamjuree',sans-serif; font-size:1rem; font-weight:600; margin:5px 0 3px; color:var(--ink); }
+  .ph span { font-size:.78rem; color:var(--ink-soft); }
   .ph.now { background:var(--violet-soft); border-color:var(--violet); border-width:2px; }
   .ph.past { opacity:.5; }
   .ph.now .step { color:var(--violet); }
