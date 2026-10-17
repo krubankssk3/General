@@ -11,23 +11,23 @@
   --side-w: 268px;
 }
 
-/* ---- ธีมสว่าง (ปรับให้ตัวอักษรเข้มขึ้น อ่านง่ายกว่าเดิม) ---- */
+/* ---- ธีมสว่าง คู่สีคอนทราสต์สูง อ่านง่าย ---- */
 :root, [data-theme="light"] {
-  --ink: #1A1330;          /* เดิม #241C3B เข้มขึ้น */
-  --ink-soft: #453C63;     /* เดิม #5A5178 เข้มขึ้นชัด */
-  --ink-faint: #6B6488;    /* เดิม #8B849F เข้มขึ้น อ่านออก */
-  --paper: #F4F3ED;
+  --ink: #14102A;          /* ตัวอักษรหลัก เข้มเกือบดำอมม่วง */
+  --ink-soft: #3A3358;     /* ตัวอักษรรอง ยังเข้มพออ่านสบาย */
+  --ink-faint: #5B5478;    /* คำอธิบายจางสุด ยังผ่านเกณฑ์คอนทราสต์ */
+  --paper: #EEEDF4;        /* พื้นหลังเทาอมม่วงอ่อน ตัดกับการ์ดขาว */
   --card: #FFFFFF;
-  --rule: #CFCBBF;
-  --violet-soft: #ECE7FB;
-  --sidebar: #1A1330;
-  --sidebar-ink: #EDEAF7;
-  --sidebar-faint: #9089B0;
-  --sidebar-rule: #362B57;
+  --rule: #C6C2D4;         /* เส้นขอบเข้มขึ้น เห็นชัด */
+  --violet-soft: #E7E1FB;
+  --sidebar: #171130;
+  --sidebar-ink: #F3F1FA;
+  --sidebar-faint: #A49CC4;
+  --sidebar-rule: #352B57;
   --sidebar-hover: #2C2350;
-  --screen-bg: #17122C;
-  --screen-ink: #EDEAF7;
-  --shadow: 0 1px 3px rgba(26,19,48,.08);
+  --screen-bg: #171130;
+  --screen-ink: #F3F1FA;
+  --shadow: 0 1px 3px rgba(20,16,42,.10);
 }
 
 /* ---- ธีมมืด ---- */
@@ -80,6 +80,12 @@ body {
   background: var(--paper);
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
+}
+
+/* จอฉายที่หอประชุม พื้นเข้มเสมอ ไม่ว่าธีมไหน ให้ตัวเลขสีขาวอ่านชัดจากไกล */
+body.screen {
+  background: var(--screen-bg);
+  color: var(--screen-ink);
 }
 
 a { color: var(--violet); }
