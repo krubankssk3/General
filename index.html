@@ -189,6 +189,18 @@ function initial(s) {
   return s ? s.charAt(0) : '?';
 }
 
+/* การ์ดในผังองค์กร (ประธาน/รองประธาน) */
+function orgCard(p, isPres) {
+  var inner = p.photo
+    ? ' style="background-image:url(&quot;' + esc(p.photo) + '&quot;)"><'
+    : '>' + esc(initial(p.name)) + '<';
+  return '<div class="org-card' + (isPres ? ' pres' : '') + '">' +
+    '<span class="org-role">' + esc(p.role) + '</span>' +
+    '<div class="org-ava"' + inner + '/div>' +
+    '<div class="org-name">' + esc(p.name || '-') + '</div>' +
+    (p.room ? '<div class="org-room">' + esc(p.room) + '</div>' : '') + '</div>';
+}
+
 function showCand(c) {
   var members = parseArr(c.membersJson);
   var polimgs = parseArr(c.policyImages);
@@ -197,19 +209,24 @@ function showCand(c) {
     ? '<img src="' + esc(c.photoUrl) + '" style="width:100%;max-width:260px;border-radius:10px;margin:0 auto 16px;display:block">'
     : '';
 
-  /* การ์ดหัวหน้าทีม เด่นเต็มแถว */
-  var leadInner = c.leaderPhoto
-    ? ' style="background-image:url(&quot;' + esc(c.leaderPhoto) + '&quot;)"><'
-    : '>' + esc(initial(c.leader)) + '<';
-  var leadBanner = '<div class="team-lead"><div class="tl-ava"' + leadInner + '/div>' +
-    '<div class="tl-info"><span class="tl-badge">★ หัวหน้าทีม</span>' +
-    '<div class="tl-name">' + esc(c.leader || '-') + '</div>' +
-    '<div class="tl-room">' + esc(c.leaderRoom || '') + '</div></div></div>';
+  /* แยกผู้มีตำแหน่ง (ขึ้นผังโยงจากประธาน) กับสมาชิกทั่วไป (ลงกริดด้านล่าง) */
+  var execs = [], plain = [], i;
+  for (i = 0; i < members.length; i++) {
+    if (String(members[i].role || '').trim()) { execs.push(members[i]); }
+    else { plain.push(members[i]); }
+  }
 
-  /* การ์ดสมาชิก */
+  /* ผังองค์กร: ประธานอยู่บน โยงเส้นลงรองประธาน/ตำแหน่งต่างๆ */
+  var pres = { name: c.leader, room: c.leaderRoom, photo: c.leaderPhoto, role: '★ ประธานทีม' };
+  var execHtml = '';
+  for (i = 0; i < execs.length; i++) { execHtml += '<li>' + orgCard(execs[i], false) + '</li>'; }
+  var tree = '<div class="org"><ul><li>' + orgCard(pres, true) +
+    (execHtml ? '<ul>' + execHtml + '</ul>' : '') + '</li></ul></div>';
+
+  /* การ์ดสมาชิกทั่วไป */
   var grid = '';
-  for (var i = 0; i < members.length; i++) {
-    var m = members[i];
+  for (i = 0; i < plain.length; i++) {
+    var m = plain[i];
     var inner = m.photo
       ? ' style="background-image:url(&quot;' + esc(m.photo) + '&quot;)"><'
       : '>' + esc(initial(m.name)) + '<';
@@ -217,8 +234,8 @@ function showCand(c) {
       '<div class="tm-name">' + esc(m.name || '-') + '</div>' +
       (m.room ? '<div class="tm-room">' + esc(m.room) + '</div>' : '') + '</div>';
   }
-  var gridBlock = grid ? '<div class="team-sec-lbl">สมาชิกทีม ' + members.length + ' คน</div><div class="team-grid">' + grid + '</div>' : '';
-  var teamBlock = '<div class="team-wrap">' + leadBanner + gridBlock + '</div>';
+  var gridBlock = grid ? '<div class="team-sec-lbl">สมาชิกทีม ' + plain.length + ' คน</div><div class="team-grid">' + grid + '</div>' : '';
+  var teamBlock = '<div class="team-wrap">' + tree + gridBlock + '</div>';
 
   var memoText = c.members ? '<p class="muted" style="text-align:center;margin:10px 0 2px">' + esc(c.members) + '</p>' : '';
   var policyText = c.policy ? '<p style="text-align:left;margin-top:14px"><b>นโยบาย</b><br>' + esc(c.policy) + '</p>' : '';
