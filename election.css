@@ -282,7 +282,9 @@ h3 { font-family: 'Bai Jamjuree', sans-serif; font-size: 1.08rem; font-weight: 6
 .avatar-box span { font-size: .6rem; color: var(--ink-faint); }
 
 .mem-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
-.mem-row { display: grid; grid-template-columns: 56px 1fr 120px 34px; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.mem-row { display: grid; grid-template-columns: 52px 1.3fr 96px 120px 30px; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+@media (max-width: 700px) { .mem-row { grid-template-columns: 52px 1fr 30px; } .mem-row .mem-room, .mem-row .mem-role { grid-column: 2; } }
+.mem-hint { font-size: .74rem; color: var(--ink-faint); margin: -2px 0 10px; }
 .mem-row .mem-ava { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--rule); background: var(--card) center/cover no-repeat; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .mem-row .mem-ava small { font-size: .54rem; color: var(--ink-faint); text-align: center; line-height: 1.2; padding: 0 2px; }
 .mem-row input { margin: 0; padding: 10px 12px; font-size: .92rem; }
@@ -297,14 +299,37 @@ h3 { font-family: 'Bai Jamjuree', sans-serif; font-size: 1.08rem; font-weight: 6
 .team-wrap { margin: 14px 0 2px; }
 .team-sec-lbl { font-family: 'IBM Plex Mono', monospace; font-size: .64rem; letter-spacing: .16em; text-transform: uppercase; color: var(--violet); text-align: left; margin: 2px 0 8px; }
 
-/* การ์ดหัวหน้าทีม เด่นเต็มแถว */
-.team-lead { display: flex; align-items: center; gap: 16px; text-align: left; padding: 16px 18px; border-radius: 14px; margin-bottom: 16px; background: linear-gradient(135deg, var(--violet-soft), var(--card) 85%); border: 1px solid var(--violet); position: relative; overflow: hidden; }
-.team-lead::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--violet); }
-.team-lead .tl-ava { width: 86px; height: 86px; border-radius: 50%; flex: none; background: var(--card) center/cover no-repeat; border: 3px solid var(--card); box-shadow: 0 0 0 3px var(--violet), 0 4px 14px rgba(20,16,42,.18); display: flex; align-items: center; justify-content: center; font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 2rem; color: var(--violet); }
-.team-lead .tl-info { flex: 1; min-width: 0; }
-.team-lead .tl-badge { display: inline-flex; align-items: center; gap: 5px; font-family: 'Bai Jamjuree', sans-serif; font-size: .68rem; font-weight: 600; letter-spacing: .04em; color: var(--violet-ink); background: var(--violet); padding: 3px 11px; border-radius: 100px; margin-bottom: 7px; }
-.team-lead .tl-name { font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 1.2rem; color: var(--ink); line-height: 1.3; }
-.team-lead .tl-room { font-size: .84rem; color: var(--ink-soft); margin-top: 1px; }
+/* ผังทีม ประธานอยู่บน โยงเส้นลงรองประธาน/ตำแหน่งต่างๆ (เส้นโยงล้วน CSS) */
+.org { text-align: center; overflow-x: auto; padding: 6px 0 2px; }
+.org ul { position: relative; padding-top: 24px; display: flex; justify-content: center; margin: 0; list-style: none; }
+.org li { list-style: none; position: relative; padding: 24px 12px 0; }
+/* เส้นโยงจากบัสแนวนอนลงแต่ละโหนด */
+.org li::before, .org li::after { content: ''; position: absolute; top: 0; right: 50%; width: 50%; height: 24px; border-top: 2px solid var(--rule); }
+.org li::after { right: auto; left: 50%; border-left: 2px solid var(--rule); }
+.org li::before { border-right: 2px solid var(--rule); }
+.org li:first-child::before, .org li:last-child::after { border: 0; }
+.org li:last-child::before { border-right: 2px solid var(--rule); border-radius: 0 7px 0 0; }
+.org li:first-child::after { border-radius: 7px 0 0 0; }
+.org li:only-child::before, .org li:only-child::after { display: none; }
+/* เส้นดิ่งจากประธานลงบัส */
+.org ul ul::before { content: ''; position: absolute; top: 0; left: 50%; width: 2px; height: 24px; background: var(--rule); transform: translateX(-1px); }
+/* ชั้นราก (ประธาน) ไม่มีเส้นด้านบน */
+.org > ul { padding-top: 0; }
+.org > ul > li { padding-top: 0; }
+.org > ul > li::before, .org > ul > li::after { display: none; }
+
+.org-card { display: inline-flex; flex-direction: column; align-items: center; min-width: 124px; padding: 13px 13px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--rule); box-shadow: var(--shadow); transition: transform .2s cubic-bezier(.16,1,.3,1), box-shadow .2s, border-color .2s; }
+.org-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(20,16,42,.12); border-color: var(--violet); }
+.org-role { font-family: 'Bai Jamjuree', sans-serif; font-size: .64rem; font-weight: 600; letter-spacing: .03em; color: #fff; background: var(--violet); padding: 2px 10px; border-radius: 100px; margin-bottom: 9px; white-space: nowrap; }
+.org-ava { width: 64px; height: 64px; border-radius: 50%; background: var(--paper) center/cover no-repeat; box-shadow: 0 0 0 2px var(--violet-soft); display: flex; align-items: center; justify-content: center; font-family: 'Bai Jamjuree', sans-serif; font-weight: 700; font-size: 1.45rem; color: var(--violet); margin-bottom: 9px; }
+.org-name { font-family: 'Bai Jamjuree', sans-serif; font-weight: 600; font-size: .86rem; color: var(--ink); line-height: 1.25; }
+.org-room { font-size: .68rem; color: var(--ink-soft); margin-top: 3px; }
+/* ประธาน เด่นกว่า */
+.org-card.pres { min-width: 158px; padding: 18px; background: linear-gradient(135deg, var(--violet-soft), var(--card) 85%); border-color: var(--violet); }
+.org-card.pres .org-role { background: var(--amber); }
+.org-card.pres .org-ava { width: 82px; height: 82px; font-size: 1.8rem; border: 3px solid var(--card); box-shadow: 0 0 0 3px var(--violet), 0 4px 14px rgba(20,16,42,.18); margin-bottom: 11px; }
+.org-card.pres .org-name { font-size: 1.1rem; font-weight: 700; }
+.org-card.pres .org-room { font-size: .78rem; }
 
 /* การ์ดสมาชิก ตารางยืดหยุ่น */
 .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 12px; }
