@@ -76,9 +76,14 @@ var Voice = {
 
 var Theme = {
   KEY: 'el_theme',
+  ACCENT: 'el_accent',
 
   get: function () {
     try { return localStorage.getItem(Theme.KEY) || 'light'; } catch (e) { return 'light'; }
+  },
+
+  getAccent: function () {
+    try { return localStorage.getItem(Theme.ACCENT) || '#6D4FE0'; } catch (e) { return '#6D4FE0'; }
   },
 
   set: function (name) {
@@ -87,12 +92,39 @@ var Theme = {
     Theme.paintButtons(name);
   },
 
+  setAccent: function (hex) {
+    try { localStorage.setItem(Theme.ACCENT, hex); } catch (e) {}
+    Theme.set('custom');
+  },
+
   apply: function (name) {
     document.documentElement.setAttribute('data-theme', name);
+    var root = document.documentElement;
+    if (name === 'custom') {
+      var hex = Theme.getAccent();
+      root.style.setProperty('--violet', hex);
+      root.style.setProperty('--violet-soft', Theme.tint(hex, 0.12));
+    } else {
+      /* เลิกบังคับสีหลักเมื่อกลับไปธีมสำเร็จรูป */
+      root.style.removeProperty('--violet');
+      root.style.removeProperty('--violet-soft');
+    }
+  },
+
+  /* ผสมสีให้จางลงเป็นพื้นอ่อน (--violet-soft) */
+  tint: function (hex, alpha) {
+    var h = hex.replace('#', '');
+    if (h.length === 3) { h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]; }
+    var r = parseInt(h.substring(0, 2), 16);
+    var g = parseInt(h.substring(2, 4), 16);
+    var b = parseInt(h.substring(4, 6), 16);
+    /* ผสมกับขาวเพื่อให้ได้พื้นอ่อนทึบ อ่านตัวอักษรเข้มทับได้ */
+    var mix = function (c) { return Math.round(c + (255 - c) * (1 - alpha * 2.2)); };
+    return 'rgb(' + mix(r) + ',' + mix(g) + ',' + mix(b) + ')';
   },
 
   paintButtons: function (name) {
-    var btns = document.querySelectorAll('.theme-pick button');
+    var btns = document.querySelectorAll('.theme-pick [data-theme]');
     for (var i = 0; i < btns.length; i++) {
       if (btns[i].getAttribute('data-theme') === name) { btns[i].classList.add('on'); }
       else { btns[i].classList.remove('on'); }
@@ -140,17 +172,31 @@ function buildShell() {
 
     html += '</nav>';
     html += '<div class="theme-lbl">ธีมการแสดงผล</div>';
-    html += '<div class="theme-pick">' +
-      '<button data-theme="light">สว่าง</button>' +
-      '<button data-theme="dark">มืด</button>' +
-      '<button data-theme="auto">อัตโนมัติ</button></div>';
+    var SW = [
+      ['light', 'สว่าง', '#EEEDF4', '#6D4FE0'],
+      ['dark', 'มืด', '#1E1830', '#8B6FF0'],
+      ['pastel', 'พาสเทล', '#F7F3FB', '#9B7FD4'],
+      ['ocean', 'ทางการ', '#EDF3F9', '#1C6DB5'],
+      ['auto', 'อัตโนมัติ', 'linear-gradient(135deg,#EEEDF4 50%,#1E1830 50%)', '#6D4FE0']
+    ];
+    html += '<div class="theme-pick">';
+    for (var sw = 0; sw < SW.length; sw++) {
+      html += '<button data-theme="' + SW[sw][0] + '" title="' + SW[sw][1] + '" aria-label="' + SW[sw][1] + '">' +
+        '<span class="sw" style="background:' + SW[sw][2] + '"><em style="background:' + SW[sw][3] + '"></em></span>' +
+        SW[sw][1] + '</button>';
+    }
+    html += '</div>';
+    html += '<div class="theme-custom"><label for="accentPick">กำหนดสีเอง</label>' +
+      '<input type="color" id="accentPick" value="' + Theme.getAccent() + '"></div>';
     html += '<div class="side-foot">ปีการศึกษา 2569<br>สพป.ศรีสะเกษ เขต 3</div>';
     side.innerHTML = html;
 
-    var picks = side.querySelectorAll('.theme-pick button');
+    var picks = side.querySelectorAll('.theme-pick [data-theme]');
     for (var p = 0; p < picks.length; p++) {
       picks[p].onclick = function () { Theme.set(this.getAttribute('data-theme')); };
     }
+    var acc = document.getElementById('accentPick');
+    if (acc) { acc.oninput = function () { Theme.setAccent(this.value); }; }
     Theme.paintButtons(Theme.get());
   }
 
@@ -483,9 +529,13 @@ function setLogoEverywhere(url) {
   if (el) { el.src = url; }
   var now = document.getElementById('lgnow');
   if (now) { now.src = url; }
+  /* ใส่โลโก้ลงกล่องแจ้งเตือน SweetAlert ผ่านตัวแปร CSS */
+  try { document.documentElement.style.setProperty('--el-logo', 'url("' + url + '")'); } catch (e) {}
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  /* ตั้งโลโก้เริ่มต้นให้กล่องแจ้งเตือนมีตราทันที ก่อน loadLogo จะดึงของจริง */
+  try { document.documentElement.style.setProperty('--el-logo', 'url("' + SCHOOL_LOGO + '")'); } catch (e) {}
   buildShell();
   watchNet();
   initReveal();
