@@ -178,13 +178,54 @@ function loadCands() {
   });
 }
 
+function parseArr(s) {
+  if (!s) { return []; }
+  try { var v = JSON.parse(s); return (v && v.length) ? v : []; } catch (e) { return []; }
+}
+
 function showCand(c) {
-  var img = c.photoUrl ? '<img src="' + esc(c.photoUrl) + '" style="width:100%;max-width:280px;border-radius:10px;margin:0 auto 14px;display:block">' : '';
-  var clip = c.clipUrl ? '<br><a href="' + esc(c.clipUrl) + '" target="_blank" rel="noopener">ดูคลิปแนะนำทีม</a>' : '';
+  var members = parseArr(c.membersJson);
+  var polimgs = parseArr(c.policyImages);
+
+  var poster = c.photoUrl
+    ? '<img src="' + esc(c.photoUrl) + '" style="width:100%;max-width:260px;border-radius:10px;margin:0 auto 16px;display:block">'
+    : '';
+
+  /* ทีมงาน: หัวหน้าทีมก่อน แล้วต่อด้วยสมาชิกพร้อมรูป */
+  var team = '';
+  var leadAva = c.leaderPhoto ? ' style="background-image:url(&quot;' + esc(c.leaderPhoto) + '&quot;)"' : '';
+  team += '<div class="team-member lead"><div class="tm-ava"' + leadAva + '></div>' +
+    '<div class="tm-name">' + esc(c.leader || '-') + '</div>' +
+    '<div class="tm-room">' + esc(c.leaderRoom || '') + '</div>' +
+    '<div class="tm-badge">หัวหน้าทีม</div></div>';
+  for (var i = 0; i < members.length; i++) {
+    var m = members[i];
+    var ava = m.photo ? ' style="background-image:url(&quot;' + esc(m.photo) + '&quot;)"' : '';
+    team += '<div class="team-member"><div class="tm-ava"' + ava + '></div>' +
+      '<div class="tm-name">' + esc(m.name || '') + '</div>' +
+      '<div class="tm-room">' + esc(m.room || '') + '</div></div>';
+  }
+  var teamBlock = '<div class="team-grid">' + team + '</div>';
+
+  var memoText = c.members ? '<p class="muted" style="text-align:center;margin:0 0 4px">' + esc(c.members) + '</p>' : '';
+  var policyText = c.policy ? '<p style="text-align:left;margin-top:14px"><b>นโยบาย</b><br>' + esc(c.policy) + '</p>' : '';
+
+  var gallery = '';
+  if (polimgs.length) {
+    gallery = '<div class="policy-gallery">';
+    for (var p = 0; p < polimgs.length; p++) {
+      gallery += '<img src="' + esc(polimgs[p]) + '" alt="รายละเอียดนโยบาย" loading="lazy">';
+    }
+    gallery += '</div>';
+  }
+  var clip = c.clipUrl
+    ? '<p style="text-align:center;margin-top:14px"><a href="' + esc(c.clipUrl) + '" target="_blank" rel="noopener">ดูคลิปแนะนำทีม</a></p>'
+    : '';
+
   Swal.fire({
     title: 'หมายเลข ' + esc(c.no) + ' — ' + esc(c.party),
-    html: img + '<p style="text-align:left"><b>หัวหน้าทีม:</b> ' + esc(c.leader) + ' ' + esc(c.leaderRoom) +
-          '<br><b>สมาชิก:</b> ' + esc(c.members) + '<br><br>' + esc(c.policy) + '</p>' + clip,
+    html: poster + teamBlock + memoText + policyText + gallery + clip,
+    width: 640,
     confirmButtonText: 'ปิด'
   });
 }
