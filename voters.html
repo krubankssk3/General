@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ผู้มีสิทธิ์เลือกตั้ง — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .scroll { overflow-x:auto; }
+</style>
+</head>
+<body data-page="voters.html" data-title="ผู้มีสิทธิ์เลือกตั้ง" data-sub="เพิ่ม นำเข้า และจัดการรายชื่อผู้มีสิทธิ์" data-doc="ปีการศึกษา 2569<br>เฉพาะผู้ดูแลระบบ">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+
+  <div class="wrap">
+  <div class="sheet">
+
+  <section style="padding-top:28px">
+    <span class="eyebrow reveal">ผู้มีสิทธิ์เลือกตั้ง</span>
+    <h2 class="reveal">เพิ่มรายชื่อผู้มีสิทธิ์</h2>
+    <p class="lead reveal">เพิ่มทีละคน หรือโยนไฟล์ Excel เข้าไปทั้งห้องก็ได้ ระบบจับคอลัมน์ เลขประจำตัว ชื่อ และชั้น ให้อัตโนมัติ</p>
+
+    <div class="grid g2" style="margin-top:20px">
+      <div class="card reveal">
+        <h3 style="margin-bottom:14px">เพิ่มทีละคน</h3>
+        <div class="field"><label>เลขประจำตัวนักเรียน</label><input id="vId" type="text" inputmode="numeric" placeholder="13001"></div>
+        <div class="field"><label>ชื่อ-นามสกุล</label><input id="vName" type="text" placeholder="กันต์ธีร์ สุขประเสริฐ"></div>
+        <div class="field"><label>ระดับชั้น</label><input id="vGrade" type="text" placeholder="ม.1 หรือ ป.4"></div>
+        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-weight:400;margin-bottom:14px">
+          <input type="checkbox" id="vFaceOpt" style="width:auto;padding:0">
+          <span>ลงทะเบียนใบหน้าด้วย (ไม่บังคับ สำหรับ ม.ต้น)</span>
+        </label>
+        <button class="btn primary" id="vAdd">เพิ่มผู้มีสิทธิ์</button>
+      </div>
+
+      <div class="card reveal">
+        <h3 style="margin-bottom:6px">นำเข้าจากไฟล์ Excel</h3>
+        <p class="muted" style="margin-bottom:14px">ไฟล์ .xlsx หรือ .csv ที่มีคอลัมน์ เลขประจำตัว ชื่อ-นามสกุล และชั้น</p>
+        <div class="field"><input type="file" id="xlsxFile" accept=".xlsx,.xls,.csv"></div>
+        <div id="xlsxPreview" style="display:none;margin:12px 0;padding:14px;border:1px solid var(--rule);background:var(--paper);border-radius:8px;font-size:.88rem"></div>
+        <button class="btn primary" id="xlsxImport" style="display:none">นำเข้าทั้งหมด</button>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-top:18px">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">รายชื่อในทะเบียน <span class="muted" id="vTotal"></span></h3>
+        <input id="vSearch" type="text" placeholder="ค้นหา เลขประจำตัว ชื่อ หรือชั้น" style="margin-left:auto;max-width:280px">
+      </div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>เลขประจำตัว</th><th>ชื่อ-นามสกุล</th><th>ชั้น</th><th>ใช้สิทธิ์</th><th style="text-align:right">จัดการ</th></tr></thead>
+          <tbody id="vBody"><tr><td colspan="5" class="muted">กำลังโหลด…</td></tr></tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span class="muted" id="vPageInfo"></span>
+        <div style="display:flex;gap:8px">
+          <button class="btn sm ghost" id="vPrev">ก่อนหน้า</button>
+          <button class="btn sm ghost" id="vNext">ถัดไป</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </div>
+  </div>
+
+  <div class="foot">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+if (!Session.guard()) { throw new Error('redirect'); }
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ================= เพิ่มผู้มีสิทธิ์ทีละคน ================= */
+
+document.getElementById('vAdd').onclick = function () {
+  var btn = this;
+  var payload = {
+    studentId: document.getElementById('vId').value.trim(),
+    name: document.getElementById('vName').value.trim(),
+    grade: document.getElementById('vGrade').value.trim()
+  };
+  var wantFace = document.getElementById('vFaceOpt').checked;
+
+  if (!payload.studentId || !payload.name || !payload.grade) {
+    Swal.fire({ icon: 'warning', title: 'กรอกไม่ครบ', text: 'ต้องมีเลขประจำตัว ชื่อ และชั้น', confirmButtonText: 'ปิด' });
+    return;
+  }
+  if (!lockBtn(btn, 'กำลังเพิ่ม…')) { return; }
+  showLoading('กำลังเพิ่มผู้มีสิทธิ์');
+
+  API.call('addVoter', payload, function (data) {
+    unlockBtn(btn);
+    loadVoters();
+    document.getElementById('vId').value = '';
+    document.getElementById('vName').value = '';
+    document.getElementById('vGrade').value = '';
+    document.getElementById('vFaceOpt').checked = false;
+
+    if (wantFace) {
+      enrollFaceInline(payload.studentId, payload.name);
+    } else {
+      Swal.fire({
+        icon: 'success',
+        title: data.action === 'added' ? 'เพิ่มแล้ว' : 'อัปเดตแล้ว',
+        html: 'ตอนนี้มีผู้มีสิทธิ์ <b>' + data.total + '</b> คน',
+        timer: 1600, showConfirmButton: false
+      });
+    }
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'เพิ่มไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+/* ลงทะเบียนใบหน้าแบบอินไลน์ มีช่องยืนยันความยินยอม */
+function enrollFaceInline(sid, name) {
+  Swal.fire({
+    title: 'ลงทะเบียนใบหน้า ' + name,
+    html: '<video id="evCam" autoplay playsinline style="width:100%;max-width:300px;border-radius:8px;background:#000;transform:scaleX(-1)"></video>' +
+          '<input id="evConsent" class="swal2-input" placeholder="ผู้ให้ความยินยอม เช่น บิดา">' +
+          '<p class="mono" style="color:#8B849F;font-size:.75rem">ต้องได้รับความยินยอมจากผู้ปกครองก่อน ภาพใช้แล้วลบทันที</p>',
+    showCancelButton: true,
+    confirmButtonText: 'ถ่ายและบันทึก',
+    cancelButtonText: 'ข้ามไปก่อน',
+    allowOutsideClick: false,
+    didOpen: function () { Camera.open(document.getElementById('evCam'), null, function (m) { Swal.showValidationMessage(m); }); },
+    preConfirm: function () {
+      var consent = document.getElementById('evConsent').value.trim();
+      var v = document.getElementById('evCam');
+      if (!consent) { Swal.showValidationMessage('ระบุผู้ให้ความยินยอมก่อน'); return false; }
+      if (!v || !v.videoWidth) { Swal.showValidationMessage('กล้องยังไม่พร้อม'); return false; }
+      return { img: Camera.snap(v), consent: consent };
+    }
+  }).then(function (r) {
+    Camera.close();
+    if (!r.isConfirmed) {
+      Swal.fire({ icon: 'success', title: 'เพิ่มผู้มีสิทธิ์แล้ว', text: 'ยังไม่ได้ลงทะเบียนใบหน้า', timer: 1600, showConfirmButton: false });
+      return;
+    }
+    showLoading('กำลังบันทึกใบหน้า');
+    API.call('enrollFace', { studentId: sid, image: r.value.img, consentBy: r.value.consent }, function () {
+      Swal.fire({ icon: 'success', title: 'เรียบร้อย', html: 'เพิ่มผู้มีสิทธิ์และลงทะเบียนใบหน้าแล้ว', confirmButtonText: 'ปิด' });
+    }, function (msg) {
+      Swal.fire({ icon: 'warning', title: 'เพิ่มผู้มีสิทธิ์แล้ว แต่ใบหน้าไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  });
+}
+
+/* ================= นำเข้าจากไฟล์ Excel ================= */
+
+var xlsxValues = null;
+
+document.getElementById('xlsxFile').onchange = function () {
+  var file = this.files && this.files[0];
+  var prev = document.getElementById('xlsxPreview');
+  var impBtn = document.getElementById('xlsxImport');
+  xlsxValues = null;
+  prev.style.display = 'none';
+  impBtn.style.display = 'none';
+  if (!file) { return; }
+
+  if (typeof XLSX === 'undefined') {
+    Swal.fire({ icon: 'error', title: 'โหลดตัวอ่าน Excel ไม่ได้', text: 'ตรวจอินเทอร์เน็ตแล้วรีเฟรชหน้า', confirmButtonText: 'ปิด' });
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      xlsxValues = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'อ่านไฟล์ไม่ได้', text: 'ไฟล์อาจเสียหรือไม่ใช่ Excel', confirmButtonText: 'ปิด' });
+      return;
+    }
+    if (!xlsxValues || !xlsxValues.length) {
+      Swal.fire({ icon: 'warning', title: 'ไฟล์ว่าง', confirmButtonText: 'ปิด' });
+      return;
+    }
+
+    showLoading('กำลังตรวจไฟล์');
+    API.call('previewVoters', { values: xlsxValues }, function (p) {
+      Swal.close();
+      var grades = '';
+      for (var g in p.byGrade) { grades += g + ' ' + p.byGrade[g] + ' คน · '; }
+      var sample = '';
+      for (var i = 0; i < p.sample.length; i++) {
+        sample += '<div class="mono" style="color:var(--ink-soft)">' + esc(p.sample[i].id) + ' · ' + esc(p.sample[i].name) + ' · ' + esc(p.sample[i].grade) + '</div>';
+      }
+      prev.innerHTML =
+        '<b>อ่านได้ ' + p.ok + ' คน</b> · ข้าม ' + p.skipped + ' · ซ้ำ ' + p.dupes + '<br>' +
+        '<span class="muted">' + grades.replace(/ · $/, '') + '</span>' +
+        '<div style="margin-top:10px">ตัวอย่าง 5 คนแรก</div>' + sample;
+      prev.style.display = 'block';
+      impBtn.style.display = p.ok > 0 ? 'inline-flex' : 'none';
+    }, function (msg) {
+      Swal.fire({ icon: 'error', title: 'ตรวจไฟล์ไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+document.getElementById('xlsxImport').onclick = function () {
+  var btn = this;
+  if (!xlsxValues) { return; }
+  if (!lockBtn(btn, 'กำลังนำเข้า…')) { return; }
+  showLoading('กำลังนำเข้ารายชื่อ', 'อาจใช้เวลาสักครู่ถ้ามีหลายร้อยคน');
+
+  API.call('importVotersXlsx', { values: xlsxValues }, function (r) {
+    unlockBtn(btn);
+    loadVoters();
+    document.getElementById('xlsxFile').value = '';
+    document.getElementById('xlsxPreview').style.display = 'none';
+    btn.style.display = 'none';
+    xlsxValues = null;
+    Swal.fire({
+      icon: 'success', title: 'นำเข้าเรียบร้อย',
+      html: 'เพิ่มใหม่ <b>' + r.added + '</b> คน · อัปเดต <b>' + r.updated + '</b> คน · ข้าม ' + r.skipped + '<br>รวมในทะเบียน ' + r.total + ' คน',
+      confirmButtonText: 'ปิด'
+    });
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'นำเข้าไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+/* ================= จัดการนักเรียนในทะเบียน ================= */
+
+var vOffset = 0, vLimit = 40, vQuery = '', vMatched = 0, vSearchTimer = null;
+
+function loadVoters() {
+  API.call('listVoters', { query: vQuery, offset: vOffset, limit: vLimit }, function (data) {
+    vMatched = data.matched || 0;
+    document.getElementById('vTotal').textContent = '(' + (data.total || 0) + ' คน)';
+    var tb = document.getElementById('vBody');
+    if (!data.voters.length) {
+      tb.innerHTML = '<tr><td colspan="5" class="muted">' + (vQuery ? 'ไม่พบที่ค้นหา' : 'ยังไม่มีนักเรียน') + '</td></tr>';
+    } else {
+      var html = '';
+      for (var i = 0; i < data.voters.length; i++) {
+        var v = data.voters[i];
+        html += '<tr><td class="mono">' + esc(v.studentId) + '</td><td>' + esc(v.name) + '</td><td>' + esc(v.grade) + '</td>' +
+          '<td>' + (v.used ? '<span style="color:var(--verify)">ใช้แล้ว</span>' : '<span class="muted">ยัง</span>') + '</td>' +
+          '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="btn sm ghost" data-ve=\'' + encodeURIComponent(JSON.stringify(v)) + '\'>แก้</button> ' +
+          '<button class="btn sm ghost" data-vd="' + esc(v.studentId) + '">ลบ</button></td></tr>';
+      }
+      tb.innerHTML = html;
+      var es = tb.querySelectorAll('[data-ve]');
+      for (var e = 0; e < es.length; e++) { es[e].onclick = function () { editVoter(JSON.parse(decodeURIComponent(this.getAttribute('data-ve')))); }; }
+      var ds = tb.querySelectorAll('[data-vd]');
+      for (var d = 0; d < ds.length; d++) { ds[d].onclick = function () { delVoter(this.getAttribute('data-vd')); }; }
+    }
+    var from = vMatched ? vOffset + 1 : 0;
+    var to = Math.min(vOffset + vLimit, vMatched);
+    document.getElementById('vPageInfo').textContent = 'แสดง ' + from + '–' + to + ' จาก ' + vMatched;
+    document.getElementById('vPrev').disabled = vOffset <= 0;
+    document.getElementById('vNext').disabled = to >= vMatched;
+  }, function () {});
+}
+
+document.getElementById('vSearch').oninput = function () {
+  var q = this.value;
+  clearTimeout(vSearchTimer);
+  vSearchTimer = setTimeout(function () { vQuery = q.trim(); vOffset = 0; loadVoters(); }, 350);
+};
+document.getElementById('vPrev').onclick = function () { if (vOffset > 0) { vOffset -= vLimit; loadVoters(); } };
+document.getElementById('vNext').onclick = function () { if (vOffset + vLimit < vMatched) { vOffset += vLimit; loadVoters(); } };
+
+function editVoter(v) {
+  Swal.fire({
+    title: 'แก้ไข ' + v.studentId,
+    html: '<input id="evN" class="swal2-input" placeholder="ชื่อ-นามสกุล" value="' + esc(v.name) + '">' +
+          '<input id="evG" class="swal2-input" placeholder="ชั้น เช่น ม.1" value="' + esc(v.grade) + '">',
+    showCancelButton: true, confirmButtonText: 'บันทึก', cancelButtonText: 'ยกเลิก', reverseButtons: true,
+    preConfirm: function () {
+      return { name: document.getElementById('evN').value.trim(), grade: document.getElementById('evG').value.trim() };
+    }
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    showLoading('กำลังบันทึก');
+    API.call('updateVoter', { studentId: v.studentId, name: r.value.name, grade: r.value.grade }, function () {
+      loadVoters();
+      Swal.fire({ icon: 'success', title: 'แก้ไขแล้ว', timer: 1400, showConfirmButton: false });
+    }, function (msg) { Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' }); });
+  });
+}
+
+function delVoter(sid) {
+  Swal.fire({
+    icon: 'warning', title: 'ลบนักเรียน ' + sid + '?',
+    text: 'ลบออกจากทะเบียน พร้อมข้อมูลใบหน้า (ถ้ามี)',
+    showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', reverseButtons: true
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    showLoading('กำลังลบ');
+    API.call('deleteVoter', { studentId: sid }, function () {
+      loadVoters();
+      Swal.fire({ icon: 'success', title: 'ลบแล้ว', timer: 1400, showConfirmButton: false });
+    }, function (msg) { Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' }); });
+  });
+}
+
+loadVoters();
+window.addEventListener('beforeunload', function () { Camera.close(); });
+</script>
+</body>
+</html>
