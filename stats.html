@@ -114,7 +114,8 @@
 <script>
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-var PARTY_FALLBACK = { '1': 'ละลมก้าวหน้า', '2': 'รวมใจบ้านละลม', '3': 'เพื่อนพัฒนา', '0': 'บัตรเสีย' };
+/* ชื่อสำรองเมื่อข้อมูลไม่มีชื่อพรรค — เก็บเฉพาะบัตรเสีย ที่เหลือปล่อยเป็น "หมายเลข N" กันโชว์ชื่อ demo ผิด */
+var PARTY_FALLBACK = { '0': 'บัตรเสีย' };
 var CAND = {};
 var STAT_YEAR = '';
 
