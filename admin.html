@@ -82,9 +82,10 @@
         <button class="btn wide" id="chain">เริ่มตรวจ</button>
       </div>
       <div class="card reveal">
-        <h3>ส่งคิวอาร์ให้ทุกชั้น</h3>
-        <p class="muted" style="margin-bottom:14px">สร้างคิวอาร์ประจำตัวนักเรียนทั้งโรงเรียนเป็นไฟล์พร้อมพิมพ์ แยกตามห้อง (รันจากเมนูในชีต)</p>
-        <button class="btn wide ghost" id="qr2">ดูวิธีสร้าง</button>
+        <h3>สร้างคิวอาร์ประจำตัวนักเรียน</h3>
+        <p class="muted" style="margin-bottom:14px">สร้างไฟล์ PDF คิวอาร์แยกตามห้อง (ตัดแปะหลังบัตรนักเรียน) เก็บในโฟลเดอร์ QR บนไดรฟ์ กดครั้งเดียวสร้างให้ทุกห้องอัตโนมัติ</p>
+        <button class="btn wide" id="qrGen">สร้างคิวอาร์ทุกห้อง</button>
+        <div id="qrResult" style="margin-top:14px"></div>
       </div>
     </div>
   </section>
@@ -616,8 +617,53 @@ document.getElementById('chain').onclick = function () {
   });
 };
 
-document.getElementById('qr2').onclick = function () {
-  demoNote('การสร้างคิวอาร์ทำจากเมนู "ระบบเลือกตั้ง → คิวอาร์ประจำตัว → สร้างครบทุกห้อง" บนหน้าชีต เพราะต้องเข้าถึง Google Drive โดยตรง');
+/* สร้างคิวอาร์ในระบบ — ยิงทีละห้องเรียงกัน กันค้าง/กัน timeout และโชว์ลิงก์ไฟล์ทันที */
+document.getElementById('qrGen').onclick = function () {
+  var btn = this;
+  if (!lockBtn(btn, 'กำลังเตรียม…')) { return; }
+  var box = document.getElementById('qrResult');
+  box.innerHTML = '';
+
+  API.call('qrRooms', {}, function (data) {
+    var rooms = data.rooms || [];
+    var folderUrl = data.folderUrl || '';
+    if (!rooms.length) {
+      unlockBtn(btn);
+      Swal.fire({ icon: 'info', title: 'ยังไม่มีห้อง', text: 'ต้องนำเข้าผู้มีสิทธิ์ก่อนจึงจะสร้างคิวอาร์ได้', confirmButtonText: 'ปิด' });
+      return;
+    }
+    box.innerHTML = '<p class="muted" style="margin-bottom:8px">เตรียมสร้าง ' + rooms.length + ' ห้อง…</p>';
+    var idx = 0, okc = 0, failc = 0;
+
+    function finish() {
+      unlockBtn(btn);
+      btn.textContent = 'สร้างคิวอาร์ทุกห้อง';
+      var head = '<p style="margin-bottom:10px"><b>เสร็จแล้ว</b> — สำเร็จ ' + okc + ' ห้อง' + (failc ? ' · ไม่สำเร็จ ' + failc + ' ห้อง' : '') + '</p>';
+      if (folderUrl) { head += '<a class="btn sm ghost" href="' + esc(folderUrl) + '" target="_blank" rel="noopener">เปิดโฟลเดอร์ QR บนไดรฟ์</a>'; }
+      box.insertAdjacentHTML('afterbegin', head);
+      Swal.fire({ icon: 'success', title: 'สร้างคิวอาร์เสร็จ', timer: 1600, showConfirmButton: false });
+    }
+
+    function next() {
+      if (idx >= rooms.length) { finish(); return; }
+      var room = rooms[idx];
+      btn.textContent = 'กำลังสร้าง ' + room + ' (' + (idx + 1) + '/' + rooms.length + ')';
+      API.call('generateQrRoom', { room: room }, function (r) {
+        okc++;
+        box.insertAdjacentHTML('beforeend', '<div class="mini"><span>' + esc(room) + ' · ' + (r.count || 0) + ' คน</span>' +
+          '<b><a href="' + esc(r.fileUrl) + '" target="_blank" rel="noopener">เปิด PDF</a></b></div>');
+        idx++; next();
+      }, function () {
+        failc++;
+        box.insertAdjacentHTML('beforeend', '<div class="mini"><span>' + esc(room) + '</span><b style="color:var(--stamp)">ไม่สำเร็จ</b></div>');
+        idx++; next();
+      });
+    }
+    next();
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'สร้างคิวอาร์ไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
 };
 
 /* ================= จัดการผู้สมัคร ================= */
