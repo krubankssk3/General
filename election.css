@@ -53,6 +53,72 @@
   --shadow: 0 1px 3px rgba(0,0,0,.3);
 }
 
+/* ---- ธีมพาสเทล นุ่มนวล ---- */
+[data-theme="pastel"] {
+  --ink: #4A4063;
+  --ink-soft: #6E6488;
+  --ink-faint: #9188AC;
+  --paper: #F7F3FB;
+  --card: #FFFFFF;
+  --rule: #E6DEF0;
+  --violet: #9B7FD4;
+  --violet-soft: #F0E9FA;
+  --stamp: #E8899F;
+  --verify: #5BB89A;
+  --amber: #E0B15C;
+  --sidebar: #7E6BA8;
+  --sidebar-ink: #FBF9FE;
+  --sidebar-faint: #D3C9E6;
+  --sidebar-rule: #917FB8;
+  --sidebar-hover: #8B78B2;
+  --screen-bg: #4A4063;
+  --screen-ink: #FBF9FE;
+  --shadow: 0 1px 3px rgba(74,64,99,.10);
+}
+
+/* ---- ธีมน้ำเงินทางการ (ประชาธิปไตย/ราชการ) ---- */
+[data-theme="ocean"] {
+  --ink: #0F2740;
+  --ink-soft: #2E4A68;
+  --ink-faint: #5B738F;
+  --paper: #EDF3F9;
+  --card: #FFFFFF;
+  --rule: #C4D4E4;
+  --violet: #1C6DB5;
+  --violet-ink: #FFFFFF;
+  --violet-soft: #E0EDF9;
+  --stamp: #C0392B;
+  --verify: #157A5B;
+  --amber: #B9770C;
+  --sidebar: #0E2237;
+  --sidebar-ink: #EAF2FB;
+  --sidebar-faint: #8AA3BE;
+  --sidebar-rule: #27405A;
+  --sidebar-hover: #1A3550;
+  --screen-bg: #0E2237;
+  --screen-ink: #EAF2FB;
+  --shadow: 0 1px 3px rgba(15,39,64,.12);
+}
+
+/* ---- ธีมกำหนดเอง ใช้ฐานสว่าง แล้ว JS แทนสีหลัก (--violet) ตามที่ผู้ใช้เลือก ---- */
+[data-theme="custom"] {
+  --ink: #171225;
+  --ink-soft: #3C374A;
+  --ink-faint: #5E596D;
+  --paper: #F0EFF2;
+  --card: #FFFFFF;
+  --rule: #CDCAD4;
+  --violet-soft: #ECE7FB;
+  --sidebar: #1B1726;
+  --sidebar-ink: #F3F1F8;
+  --sidebar-faint: #A49EB4;
+  --sidebar-rule: #342E42;
+  --sidebar-hover: #2A2438;
+  --screen-bg: #1B1726;
+  --screen-ink: #F3F1F8;
+  --shadow: 0 1px 3px rgba(23,18,37,.10);
+}
+
 @media (prefers-color-scheme: dark) {
   [data-theme="auto"] {
     --ink: #ECE9F5; --ink-soft: #B8B2CE; --ink-faint: #8A83A6;
@@ -77,14 +143,18 @@ body {
   font-family: 'IBM Plex Sans Thai', sans-serif;
   font-weight: 300;
   color: var(--ink);
-  background: var(--paper);
+  background-color: var(--paper);
+  /* ลายพื้นหลังแนวเอกสารราชการ จุดละเอียดจางๆ ไม่รบกวนการอ่าน */
+  background-image: radial-gradient(var(--rule) 0.6px, transparent 0.6px);
+  background-size: 22px 22px;
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
 }
 
 /* จอฉายที่หอประชุม พื้นเข้มเสมอ ไม่ว่าธีมไหน ให้ตัวเลขสีขาวอ่านชัดจากไกล */
 body.screen {
-  background: var(--screen-bg);
+  background-color: var(--screen-bg);
+  background-image: none;
   color: var(--screen-ink);
 }
 
@@ -130,14 +200,21 @@ a { color: var(--violet); }
 .side-nav a.on { background: rgba(91, 63, 214, .3); color: #fff; border-left-color: var(--violet); }
 .side-nav a:focus-visible { outline: 3px solid var(--violet); outline-offset: -3px; }
 
-.theme-pick { display: flex; gap: 4px; padding: 10px 14px 4px; }
+.theme-pick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px 14px 4px; }
 .theme-pick button {
-  flex: 1; font-family: 'Bai Jamjuree', sans-serif; font-size: .74rem; font-weight: 500;
-  padding: 9px 4px; border: 1px solid var(--sidebar-rule); background: transparent;
-  color: var(--sidebar-faint); border-radius: 4px; cursor: pointer; transition: all .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  font-family: 'Bai Jamjuree', sans-serif; font-size: .6rem; font-weight: 500;
+  padding: 7px 2px; border: 1px solid var(--sidebar-rule); background: transparent;
+  color: var(--sidebar-faint); border-radius: 6px; cursor: pointer; transition: all .15s;
 }
+.theme-pick button .sw { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); position: relative; overflow: hidden; }
+.theme-pick button .sw em { position: absolute; right: 3px; bottom: 3px; width: 10px; height: 10px; border-radius: 50%; }
 .theme-pick button:hover { color: #fff; border-color: var(--violet); }
-.theme-pick button.on { background: var(--violet); border-color: var(--violet); color: #fff; }
+.theme-pick button.on { border-color: #fff; color: #fff; background: rgba(255,255,255,.08); }
+.theme-pick button.on .sw { box-shadow: 0 0 0 2px var(--violet); }
+.theme-custom { display: flex; align-items: center; gap: 10px; padding: 8px 16px 2px; }
+.theme-custom label { font-family: 'Bai Jamjuree', sans-serif; font-size: .74rem; font-weight: 500; color: var(--sidebar-faint); margin: 0; cursor: pointer; }
+.theme-custom input[type=color] { width: 34px; height: 28px; padding: 2px; border: 1px solid var(--sidebar-rule); border-radius: 6px; background: transparent; cursor: pointer; margin-left: auto; }
 .theme-lbl { padding: 4px 16px 0; font-family: 'IBM Plex Mono', monospace; font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--sidebar-faint); }
 
 .side-foot { padding: 16px 20px; border-top: 1px solid var(--sidebar-rule); font-size: .72rem; color: var(--sidebar-faint); }
@@ -151,7 +228,9 @@ a { color: var(--violet); }
 .doc-no { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: .72rem; color: var(--ink-faint); text-align: right; }
 
 .wrap { flex: 1; padding: 0 28px 72px; max-width: 1180px; width: 100%; }
-.sheet { background: var(--card); border: 1px solid var(--rule); border-top: none; padding: 26px; }
+.sheet { background: var(--card); border: 1px solid var(--rule); border-top: none; padding: 26px; position: relative; }
+/* เส้นคาดหัวกระดาษแนวริบบิ้นทางการ */
+.sheet::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--violet) 0 33%, var(--verify) 33% 66%, var(--stamp) 66% 100%); opacity: .85; }
 
 section { padding: 44px 0; border-bottom: 1px solid var(--rule); }
 section:last-child { border-bottom: none; }
@@ -290,7 +369,10 @@ input[type=file] { padding: 11px; cursor: pointer; }
 
 /* ---------- SweetAlert ---------- */
 
-.swal2-popup { border-radius: 4px !important; background: var(--card) !important; border: 1px solid var(--rule); border-top: 4px solid var(--violet); font-family: 'IBM Plex Sans Thai', sans-serif !important; font-weight: 300; }
+.swal2-popup { border-radius: 8px !important; background: var(--card) !important; border: 1px solid var(--rule); padding-top: 82px !important; font-family: 'IBM Plex Sans Thai', sans-serif !important; font-weight: 300; position: relative; overflow: hidden; }
+/* แถบหัวทางการ + โลโก้โรงเรียนตรงกลางทุกกล่องแจ้งเตือน */
+.swal2-popup::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: linear-gradient(90deg, var(--violet) 0 33%, var(--verify) 33% 66%, var(--stamp) 66% 100%); }
+.swal2-popup::after { content: ''; position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 46px; height: 46px; border-radius: 50%; background: var(--el-logo, none) center/contain no-repeat, var(--card); border: 2px solid var(--violet-soft); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
 .swal2-input, .swal2-textarea { background: var(--paper) !important; color: var(--ink) !important; border-color: var(--rule) !important; }
 .swal2-title { font-family: 'Bai Jamjuree', sans-serif !important; font-weight: 600 !important; color: var(--ink) !important; font-size: 1.32rem !important; }
 .swal2-html-container b { color: var(--ink) !important; }
