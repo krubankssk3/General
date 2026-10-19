@@ -43,13 +43,7 @@
   <section style="padding-top:28px" class="reveal">
     <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px">
       <span class="pill open"><span class="dot"></span> หีบเปิดอยู่</span>
-      <span class="muted">ยืนยันตัวตนแล้ววันนี้ <b class="mono" style="color:var(--ink)" id="done">268</b> คน</span>
-      <select id="mode" style="width:auto;margin-left:auto;font-size:.82rem;padding:7px 11px">
-        <option value="live">ใช้ข้อมูลจริง (กรอกเลขประจำตัว)</option>
-        <option value="ok">จำลอง: นักเรียนปกติ</option>
-        <option value="used">จำลอง: ใช้สิทธิ์ไปแล้ว</option>
-        <option value="fail">จำลอง: ใบหน้าไม่ตรง</option>
-      </select>
+      <span class="muted">ยืนยันตัวตนแล้ววันนี้ <b class="mono" style="color:var(--ink)" id="done">0</b> คน</span>
     </div>
 
     <div class="stage">
@@ -61,7 +55,8 @@
           <p id="hint">วางบัตรประจำตัวนักเรียนให้คิวอาร์อยู่ในกรอบ</p>
         </div>
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-          <button class="btn primary" id="act">จำลองการสแกนบัตร</button>
+          <button class="btn primary" id="actScan">เปิดการสแกนบัตร</button>
+          <button class="btn ghost" id="actManual">กรอกรหัสบัตรประจำตัว</button>
           <button class="btn ghost" id="reset">เริ่มคนใหม่</button>
         </div>
       </div>
@@ -108,6 +103,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="config.js"></script>
 <script src="election.js"></script>
 <script>
@@ -116,13 +112,10 @@ if (!Session.guard()) { throw new Error('redirect'); }
 
 stagger('#notes .reveal', 110);
 
-var step = 0;
-var student = { id: '13148', name: 'กันต์ธีร์  สุขประเสริฐ', room: 'ม.2/1', initial: 'กธ' };
-
-var act = document.getElementById('act');
-var hint = document.getElementById('hint');
 var view = document.getElementById('view');
 var rail = document.getElementById('rail').children;
+var ORIG_VIEW = view.innerHTML;    /* เก็บกรอบเดิมไว้คืนหลังสแกน */
+var scanning = false, qrScanner = null;
 
 function setStep(n) {
   for (var i = 0; i < rail.length; i++) {
@@ -130,28 +123,85 @@ function setStep(n) {
   }
 }
 
-function showBeam(on) {
-  document.getElementById('beam').style.display = on ? 'block' : 'none';
-}
+function restoreView() { view.innerHTML = ORIG_VIEW; }
 
-document.getElementById('reset').onclick = function () { location.reload(); };
+document.getElementById('reset').onclick = function () { stopScan(); location.reload(); };
 
-act.onclick = function () {
-  var mode = document.getElementById('mode').value;
+/* ปุ่ม: กรอกเลขประจำตัวเอง (ใช้กรณีบัตรหาย/คิวอาร์เสีย) */
+document.getElementById('actManual').onclick = function () { stopScan(); liveCheckIn(); };
 
-  if (step === 0) { doScan(mode); }
-  else if (step === 1) { doFace(mode); }
-  else if (step === 2) { window.location.href = 'vote.html'; }
+/* ปุ่ม: เปิดกล้องสแกนคิวอาร์หลังบัตร */
+document.getElementById('actScan').onclick = function () {
+  if (scanning) { stopScan(); return; }
+  startScan();
 };
 
-/* ---- ยิงเข้า backend จริง: ตรวจสิทธิ์แล้วขอ VoteToken ---- */
+/* จำนวนผู้ยืนยันตัวตนจริงวันนี้ */
+function loadDone() {
+  API.call('live', {}, function (d) {
+    var el = document.getElementById('done');
+    if (el) { el.textContent = d.voted || 0; }
+  }, function () {});
+}
+loadDone();
+
+/* ---- สแกนคิวอาร์ด้วยกล้อง ---- */
+function startScan() {
+  if (typeof Html5Qrcode === 'undefined') {
+    Swal.fire({ icon: 'error', title: 'โหลดตัวสแกนไม่ได้', text: 'ตรวจอินเทอร์เน็ตแล้วรีเฟรชหน้า', confirmButtonText: 'ปิด' });
+    return;
+  }
+  view.innerHTML = '<div id="qrReader" style="width:100%"></div>';
+  var btn = document.getElementById('actScan');
+  btn.textContent = 'กำลังสแกน… (กดเพื่อหยุด)';
+  qrScanner = new Html5Qrcode('qrReader');
+  scanning = true;
+  qrScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: 230 },
+    function (decodedText) { stopScan(); handleScan(decodedText); },
+    function () {}   /* เฟรมที่อ่านไม่ได้ ข้ามเงียบๆ */
+  ).catch(function () {
+    scanning = false;
+    document.getElementById('actScan').textContent = 'เปิดการสแกนบัตร';
+    restoreView();
+    Swal.fire({
+      icon: 'error', title: 'เปิดกล้องไม่ได้',
+      html: 'อนุญาตให้ใช้กล้องแล้วลองใหม่ หรือกด "กรอกรหัสบัตรประจำตัว" แทน',
+      confirmButtonText: 'ปิด'
+    });
+  });
+}
+
+function stopScan() {
+  var btn = document.getElementById('actScan');
+  if (btn) { btn.textContent = 'เปิดการสแกนบัตร'; }
+  if (!qrScanner) { scanning = false; return; }
+  var s = qrScanner; qrScanner = null; scanning = false;
+  s.stop().then(function () { try { s.clear(); } catch (e) {} }).catch(function () {});
+}
+
+/* คิวอาร์บรรจุ EL{ปี}|{เลขประจำตัว}|{รหัสบัตร} ดึงเลขประจำตัวมาใช้ */
+function handleScan(text) {
+  restoreView();
+  var sid = String(text || '').trim();
+  var parts = sid.split('|');
+  if (parts.length >= 2) { sid = String(parts[1]).trim(); }
+  if (!sid) {
+    Swal.fire({ icon: 'error', title: 'อ่านคิวอาร์ไม่ได้', text: 'ลองสแกนใหม่ หรือกรอกเลขประจำตัวเอง', confirmButtonText: 'ปิด' });
+    return;
+  }
+  runCheck(sid);
+}
+
+/* ---- กรอกเลขประจำตัวเอง ---- */
 function liveCheckIn() {
   Swal.fire({
-    title: 'ยืนยันตัวตนด้วยเลขประจำตัว',
+    title: 'กรอกรหัสบัตรประจำตัว',
     input: 'text',
     inputPlaceholder: 'เช่น 13001',
     inputAttributes: { inputmode: 'numeric' },
-    html: '<span class="mono" style="color:#8B849F">ปกติจะได้จากการสแกนคิวอาร์ กรอกมือใช้กรณีบัตรหาย</span>',
+    html: '<span class="mono" style="color:#8B849F">ใช้กรณีบัตรหายหรือคิวอาร์เสีย</span>',
     showCancelButton: true,
     confirmButtonText: 'ตรวจสิทธิ์',
     cancelButtonText: 'ยกเลิก',
@@ -161,30 +211,33 @@ function liveCheckIn() {
     }
   }).then(function (r) {
     if (!r.isConfirmed) { return; }
-    showLoading('กำลังตรวจสอบ', 'ค้นทะเบียนผู้มีสิทธิ์');
+    runCheck(String(r.value));
+  });
+}
 
-    /* ขั้นที่ 1 probe ตรวจสิทธิ์ก่อน ยังไม่ออก token */
-    API.call('checkIn', { studentId: r.value, probe: true }, function (info) {
-      showStudent(info);
-      if (info.faceRequired && info.faceEnrolled) {
-        faceVerifyThenIssue(info);
-      } else if (info.faceRequired && !info.faceEnrolled) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'ยังไม่ได้ลงทะเบียนใบหน้า',
-          html: '<b>' + esc(info.name) + '</b> อยู่ชั้นที่ต้องตรวจใบหน้า แต่ยังไม่มีข้อมูลใบหน้าในระบบ',
-          showDenyButton: true,
-          confirmButtonText: 'ยืนยันด้วยบัตร ออกรหัสเลย',
-          denyButtonText: 'ยกเลิก'
-        }).then(function (x) {
-          if (x.isConfirmed) { issueLive(info.studentId, 'ข้ามใบหน้า ยังไม่ลงทะเบียน'); }
-        });
-      } else {
-        issueLive(info.studentId, 'ป.1-ป.6 ยืนยันด้วยบัตร');
-      }
-    }, function (msg) {
-      Swal.fire({ icon: 'error', title: 'ตรวจสิทธิ์ไม่ผ่าน', html: msg, confirmButtonText: 'ลองใหม่' });
-    });
+/* ---- ตรวจสิทธิ์จาก backend แล้วไปตามเงื่อนไขใบหน้า (ใช้ร่วมทั้งสแกนและกรอกเอง) ---- */
+function runCheck(studentId) {
+  showLoading('กำลังตรวจสอบ', 'ค้นทะเบียนผู้มีสิทธิ์');
+  API.call('checkIn', { studentId: studentId, probe: true }, function (info) {
+    showStudent(info);
+    if (info.faceRequired && info.faceEnrolled) {
+      faceVerifyThenIssue(info);
+    } else if (info.faceRequired && !info.faceEnrolled) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ยังไม่ได้ลงทะเบียนใบหน้า',
+        html: '<b>' + esc(info.name) + '</b> อยู่ชั้นที่ต้องตรวจใบหน้า แต่ยังไม่มีข้อมูลใบหน้าในระบบ',
+        showDenyButton: true,
+        confirmButtonText: 'ยืนยันด้วยบัตร ออกรหัสเลย',
+        denyButtonText: 'ยกเลิก'
+      }).then(function (x) {
+        if (x.isConfirmed) { issueLive(info.studentId, 'ข้ามใบหน้า ยังไม่ลงทะเบียน'); }
+      });
+    } else {
+      issueLive(info.studentId, 'ป.1-ป.6 ยืนยันด้วยบัตร');
+    }
+  }, function (msg) {
+    Swal.fire({ icon: 'error', title: 'ตรวจสิทธิ์ไม่ผ่าน', html: msg, confirmButtonText: 'ลองใหม่' });
   });
 }
 
@@ -293,119 +346,8 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function doScan(mode) {
-  if (mode === 'live') { liveCheckIn(); return; }
-  act.disabled = true;
-  hint.textContent = 'กำลังอ่านคิวอาร์…';
-
-  setTimeout(function () {
-    if (mode === 'used') {
-      showBeam(false);
-      hint.textContent = 'ตรวจสิทธิ์ไม่ผ่าน';
-      act.disabled = false;
-      Swal.fire({
-        icon: 'error',
-        title: 'ใช้สิทธิ์ไปแล้ว',
-        html: '<b>' + student.name + '</b> (' + student.room + ')<br>ลงคะแนนไปแล้วเมื่อ 09.24 น. ที่หน่วยเลือกตั้งที่ 1<br><span class="mono" style="color:#8B849F">ไม่สามารถออกรหัสเข้าคูหาซ้ำได้</span>',
-        confirmButtonText: 'เรียกคนถัดไป'
-      }).then(function () { location.reload(); });
-      return;
-    }
-
-    document.getElementById('who').innerHTML =
-      '<div style="display:flex;gap:14px;align-items:center">' +
-      '<div style="width:52px;height:52px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-family:\'Bai Jamjuree\',sans-serif;font-weight:600">' + student.initial + '</div>' +
-      '<div><strong style="font-family:\'Bai Jamjuree\',sans-serif">' + student.name + '</strong>' +
-      '<div class="muted">ชั้น ' + student.room + ' · เลขประจำตัว ' + student.id + '</div></div></div>' +
-      '<p class="mono" style="margin-top:12px;color:var(--verify)">มีชื่อในทะเบียน · ยังไม่ใช้สิทธิ์</p>';
-
-    view.innerHTML = '<div class="face">' + student.initial + '</div>';
-    step = 1;
-    setStep(2);
-    act.textContent = 'เริ่มตรวจใบหน้า';
-    act.disabled = false;
-
-    Swal.fire({
-      icon: 'success',
-      title: 'ตรวจสิทธิ์ผ่าน',
-      html: '<b>' + student.name + '</b> มีสิทธิ์ลงคะแนน<br>ขั้นต่อไปให้นักเรียนมองกล้อง',
-      timer: 1600,
-      showConfirmButton: false
-    });
-  }, 1100);
-}
-
-function doFace(mode) {
-  act.disabled = true;
-
-  Swal.fire({
-    title: 'กำลังยืนยันใบหน้า',
-    html: 'เทียบกับภาพในทะเบียนนักเรียน',
-    timer: 1800,
-    timerProgressBar: true,
-    allowOutsideClick: false,
-    didOpen: function () { Swal.showLoading(); }
-  }).then(function () {
-
-    if (mode === 'fail') {
-      Swal.fire({
-        icon: 'warning',
-        title: 'ใบหน้าไม่ตรงพอ',
-        html: 'ค่าความเหมือน <b>61.4%</b> ต่ำกว่าเกณฑ์ 80%<br>ให้กรรมการตรวจบัตรด้วยตา แล้วเลือกว่าจะยืนยันแทนหรือไม่',
-        showDenyButton: true,
-        confirmButtonText: 'ยืนยันแทนระบบ',
-        denyButtonText: 'ไม่ยืนยัน'
-      }).then(function (r) {
-        if (r.isConfirmed) {
-          Swal.fire({
-            title: 'ระบุเหตุผล',
-            input: 'text',
-            inputPlaceholder: 'เช่น แสงย้อน ใส่แว่นใหม่',
-            confirmButtonText: 'บันทึกและออกรหัส'
-          }).then(function (x) {
-            if (x.isConfirmed) { issue('ยืนยันโดยกรรมการ'); }
-            else { act.disabled = false; }
-          });
-        } else {
-          act.disabled = false;
-        }
-      });
-      return;
-    }
-
-    issue('ค่าความเหมือน 87.2%');
-  });
-}
-
-function issue(note) {
-  var code = randCode(6);
-  step = 2;
-  setStep(4);
-  act.textContent = 'ส่งเข้าคูหา';
-  act.disabled = false;
-
-  view.innerHTML = '<div style="text-align:center;padding:26px"><div class="mono" style="color:#8C82B8;margin-bottom:12px">รหัสเข้าคูหา</div>' +
-    '<div style="font-family:\'Bai Jamjuree\',sans-serif;font-size:3.2rem;font-weight:700;letter-spacing:.14em;color:#fff">' + code + '</div>' +
-    '<div class="mono" style="color:#A594F0;margin-top:12px">หมดอายุใน <span id="tk">03:00</span></div></div>';
-
-  var left = 180;
-  var t = setInterval(function () {
-    left -= 1;
-    var el = document.getElementById('tk');
-    if (!el) { clearInterval(t); return; }
-    el.textContent = pad(Math.floor(left / 60)) + ':' + pad(left % 60);
-    if (left <= 0) { clearInterval(t); }
-  }, 1000);
-
-  document.getElementById('done').textContent = '269';
-
-  Swal.fire({
-    icon: 'success',
-    title: 'ยืนยันตัวตนเรียบร้อย',
-    html: note + '<br>รหัสเข้าคูหา <b class="mono">' + code + '</b><br><span class="mono" style="color:#8B849F">เชิญนักเรียนเข้าคูหาภายใน 3 นาที</span>',
-    confirmButtonText: 'ปิด'
-  });
-}
+/* ปิดกล้องสแกนเมื่อออกจากหน้า คืนทรัพยากร */
+window.addEventListener('beforeunload', function () { stopScan(); Camera.close(); });
 </script>
 </body>
 </html>
