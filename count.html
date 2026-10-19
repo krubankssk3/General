@@ -99,10 +99,7 @@
         <div class="progress-c" id="progress">ยังไม่เริ่ม</div>
 
         <div class="tally-grid" id="tally">
-          <div class="tally-cell" data-c="1"><div class="n" id="t1">0</div><div class="l">เบอร์ 1 ละลมก้าวหน้า</div></div>
-          <div class="tally-cell" data-c="2"><div class="n" id="t2">0</div><div class="l">เบอร์ 2 รวมใจบ้านละลม</div></div>
-          <div class="tally-cell" data-c="3"><div class="n" id="t3">0</div><div class="l">เบอร์ 3 เพื่อนพัฒนา</div></div>
-          <div class="tally-cell" data-c="0"><div class="n" id="t0">0</div><div class="l">บัตรเสีย</div></div>
+          <div class="tally-cell" data-c="0"><div class="n" id="t0">0</div><div class="l">กำลังโหลดผู้สมัคร…</div></div>
         </div>
       </div>
     </section>
@@ -137,12 +134,42 @@
 if (!Session.guard()) { throw new Error('redirect'); }
 stagger('#how .reveal', 110);
 
-var PARTY = { '1': 'ละลมก้าวหน้า', '2': 'รวมใจบ้านละลม', '3': 'เพื่อนพัฒนา', '0': '' };
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+var PARTY = {};       /* หมายเลข -> ชื่อพรรค (ซิงค์จากผู้สมัครจริง) */
 var SUMMARY_EVERY = 50;
 var AUTO_GAP = 650;   /* เว้นจังหวะระหว่างใบในโหมดอัตโนมัติ (มิลลิวินาที) หลังพูดจบ */
 
 var mode = 'manual';
-var tally = { '1': 0, '2': 0, '3': 0, '0': 0 };
+var tally = { '0': 0 };
+
+/* สร้างช่องคะแนนและชื่อพรรคจากผู้สมัครล่าสุดที่บันทึกไว้ */
+function loadTallySetup() {
+  API.call('listCandidates', {}, function (data) {
+    var cs = (data && data.candidates) ? data.candidates : [];
+    cs.sort(function (a, b) { return parseInt(a.no, 10) - parseInt(b.no, 10); });
+    PARTY = {};
+    tally = {};
+    var html = '';
+    for (var i = 0; i < cs.length; i++) {
+      var no = String(cs[i].no);
+      PARTY[no] = cs[i].party;
+      tally[no] = 0;
+      html += '<div class="tally-cell" data-c="' + no + '"><div class="n" id="t' + no + '">0</div>' +
+        '<div class="l">เบอร์ ' + esc(no) + ' ' + esc(cs[i].party) + '</div></div>';
+    }
+    tally['0'] = 0;
+    html += '<div class="tally-cell" data-c="0"><div class="n" id="t0">0</div><div class="l">บัตรเสีย</div></div>';
+    document.getElementById('tally').innerHTML = html;
+  }, function () {
+    /* โหลดไม่ได้ อย่างน้อยมีช่องบัตรเสีย ไว้เริ่มนับได้ */
+    document.getElementById('tally').innerHTML =
+      '<div class="tally-cell" data-c="0"><div class="n" id="t0">0</div><div class="l">บัตรเสีย</div></div>';
+  });
+}
+loadTallySetup();
 var idx = 0;
 var total = 0;
 var pending = null;
@@ -247,7 +274,8 @@ function tallyPending() {
   if (!pending) { return; }
   var c = pending.choice;
   tally[c] = (tally[c] || 0) + 1;
-  document.getElementById('t' + c).textContent = tally[c];
+  var cellN = document.getElementById('t' + c);
+  if (cellN) { cellN.textContent = tally[c]; }
   var cells = document.querySelectorAll('.tally-cell');
   for (var i = 0; i < cells.length; i++) {
     cells[i].classList.toggle('hot', cells[i].getAttribute('data-c') === c);
@@ -345,20 +373,32 @@ document.getElementById('start').onclick = function () {
 };
 
 function speakSummary() {
-  var lead = '1';
-  ['2', '3'].forEach(function (c) { if (tally[c] > tally[lead]) { lead = c; } });
+  var nos = [];
+  for (var k in PARTY) { if (PARTY.hasOwnProperty(k)) { nos.push(k); } }
+  nos.sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
+
+  var lead = null;
+  for (var w = 0; w < nos.length; w++) {
+    if (lead === null || (tally[nos[w]] || 0) > (tally[lead] || 0)) { lead = nos[w]; }
+  }
   var rate = parseFloat(document.getElementById('voiceRate').value) || 0.6;
+
+  var line = '';
+  for (var i = 0; i < nos.length; i++) {
+    line += (i ? ' &middot; ' : '') + 'เบอร์ ' + esc(nos[i]) + ' ได้ <b>' + (tally[nos[i]] || 0) + '</b>';
+  }
 
   Swal.fire({
     icon: 'info',
     title: 'สรุปยอด ' + idx + ' ใบ',
-    html: 'เบอร์ 1 ได้ <b>' + tally['1'] + '</b> &middot; เบอร์ 2 ได้ <b>' + tally['2'] +
-          '</b> &middot; เบอร์ 3 ได้ <b>' + tally['3'] + '</b><br>บัตรเสีย ' + tally['0'] + ' ใบ',
+    html: line + '<br>บัตรเสีย ' + (tally['0'] || 0) + ' ใบ',
     timer: 3000,
     timerProgressBar: true,
     showConfirmButton: false
   });
-  Voice.say('ครบ ' + idx + ' ใบ ... เบอร์ ' + lead + ' ' + PARTY[lead] + ' นำอยู่ ' + tally[lead] + ' คะแนน', { rate: rate });
+  if (lead !== null) {
+    Voice.say('ครบ ' + idx + ' ใบ ... เบอร์ ' + lead + ' ' + (PARTY[lead] || '') + ' นำอยู่ ' + (tally[lead] || 0) + ' คะแนน', { rate: rate });
+  }
 }
 
 function finish() {
@@ -369,21 +409,36 @@ function finish() {
   document.getElementById('progress').textContent = 'นับครบทั้ง ' + total + ' ใบแล้ว';
   document.getElementById('seq').textContent = 'เสร็จสิ้น';
 
-  var winner = '1';
-  ['2', '3'].forEach(function (c) { if (tally[c] > tally[winner]) { winner = c; } });
-  var rate = parseFloat(document.getElementById('voiceRate').value) || 0.6;
+  /* หาผู้ชนะและสร้างสรุปจากพรรคจริงทุกเบอร์ (ไม่จำกัดแค่ 1-3) */
+  var nos = [];
+  for (var k in PARTY) { if (PARTY.hasOwnProperty(k)) { nos.push(k); } }
+  nos.sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
 
-  Voice.say('ขานคะแนนครบทุกใบแล้ว ... รวม ' + total + ' ใบ ... ผู้ได้คะแนนสูงสุดคือ ... เบอร์ ' + winner + ' ... ' + PARTY[winner], { rate: rate });
+  var winner = null;
+  for (var w = 0; w < nos.length; w++) {
+    if (winner === null || (tally[nos[w]] || 0) > (tally[winner] || 0)) { winner = nos[w]; }
+  }
+
+  var rate = parseFloat(document.getElementById('voiceRate').value) || 0.6;
+  if (winner !== null) {
+    Voice.say('ขานคะแนนครบทุกใบแล้ว ... รวม ' + total + ' ใบ ... ผู้ได้คะแนนสูงสุดคือ ... เบอร์ ' + winner + ' ... ' + (PARTY[winner] || ''), { rate: rate });
+  } else {
+    Voice.say('ขานคะแนนครบทุกใบแล้ว ... รวม ' + total + ' ใบ', { rate: rate });
+  }
+
+  var rows = '';
+  for (var i = 0; i < nos.length; i++) {
+    rows += 'เบอร์ ' + esc(nos[i]) + ' ' + esc(PARTY[nos[i]]) + ' &mdash; <b>' + (tally[nos[i]] || 0) + '</b><br>';
+  }
+  rows += 'บัตรเสีย &mdash; <b>' + (tally['0'] || 0) + '</b>';
+  var winLine = (winner !== null)
+    ? '<br><br><span style="color:var(--verify);font-weight:600">ผู้ชนะคือเบอร์ ' + esc(winner) + ' ' + esc(PARTY[winner]) + '</span>'
+    : '';
 
   Swal.fire({
     icon: 'success',
     title: 'ขานคะแนนครบแล้ว',
-    html: 'รวมทั้งหมด <b>' + total + '</b> ใบ<br><br>' +
-          'เบอร์ 1 ละลมก้าวหน้า &mdash; <b>' + tally['1'] + '</b><br>' +
-          'เบอร์ 2 รวมใจบ้านละลม &mdash; <b>' + tally['2'] + '</b><br>' +
-          'เบอร์ 3 เพื่อนพัฒนา &mdash; <b>' + tally['3'] + '</b><br>' +
-          'บัตรเสีย &mdash; <b>' + tally['0'] + '</b><br><br>' +
-          '<span style="color:var(--verify);font-weight:600">ผู้ชนะคือเบอร์ ' + winner + ' ' + PARTY[winner] + '</span>',
+    html: 'รวมทั้งหมด <b>' + total + '</b> ใบ<br><br>' + rows + winLine,
     confirmButtonText: 'ปิด'
   });
 }
