@@ -14,16 +14,26 @@
   .qr-panel.on { display:block; }
   .stu-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--rule); border-radius:8px; background:var(--paper); margin-bottom:8px; }
   .stu-row .meta { font-size:.8rem; color:var(--ink-faint); }
-  .qr-card { text-align:center; padding:24px; border:1px solid var(--rule); border-radius:12px; background:var(--card); max-width:340px; margin:14px auto 0; }
-  .qr-card #qrBox { display:flex; justify-content:center; margin-bottom:14px; }
-  .qr-card #qrBox img, .qr-card #qrBox canvas { border:6px solid #fff; border-radius:8px; }
-  .qr-card .qn { font-family:'Bai Jamjuree',sans-serif; font-weight:600; font-size:1.1rem; color:var(--ink); }
-  .qr-card .qm { font-size:.86rem; color:var(--ink-soft); margin-top:2px; }
+  /* บัตรเลือกตั้ง (สีคงที่ ให้พิมพ์สวยทุกธีม) */
+  .qr-card { max-width:360px; margin:16px auto 0; }
+  .qr-ballot { border:2px solid #14102a; border-radius:14px; background:#fff; overflow:hidden; box-shadow:0 8px 28px rgba(20,16,42,.14); text-align:center; }
+  .qr-ballot .qb-strip { height:7px; background:linear-gradient(90deg,#6D4FE0 0 50%,#12A47E 50% 100%); }
+  .qr-ballot .qb-head { padding:15px 18px 11px; border-bottom:1.5px dashed #c9c3d6; }
+  .qr-ballot .qb-logo { width:44px; height:44px; margin:0 auto 7px; border-radius:50%; background:#fff center/contain no-repeat; border:2px solid #e7e1fb; }
+  .qr-ballot .qb-title { font-family:'Bai Jamjuree',sans-serif; font-weight:700; font-size:1.02rem; color:#14102a; line-height:1.3; }
+  .qr-ballot .qb-sub { font-family:'Bai Jamjuree',sans-serif; font-weight:500; font-size:.82rem; color:#6D4FE0; margin-top:2px; }
+  .qr-ballot .qb-school { font-size:.78rem; color:#5b5478; margin-top:3px; }
+  .qr-ballot .qb-qr { padding:16px 18px 6px; display:flex; justify-content:center; }
+  .qr-ballot .qb-qr img, .qr-ballot .qb-qr canvas { display:block; }
+  .qr-ballot .qb-name { font-family:'Bai Jamjuree',sans-serif; font-weight:700; font-size:1.15rem; color:#14102a; padding:0 14px; }
+  .qr-ballot .qb-meta { font-size:.86rem; color:#3a3358; margin-top:2px; }
+  .qr-ballot .qb-foot { font-size:.72rem; color:#8a83a6; padding:11px 14px 15px; border-top:1.5px dashed #c9c3d6; margin-top:12px; }
   @media print {
     body * { visibility:hidden !important; }
     #printArea, #printArea * { visibility:visible !important; }
-    #printArea { position:absolute; left:0; top:0; width:100%; display:flex !important; justify-content:center; padding-top:30px; }
-    #printArea .qr-card { border:none; box-shadow:none; }
+    #printArea { position:absolute; left:0; top:0; width:100%; display:flex !important; justify-content:center; padding-top:16px; }
+    #printArea .qr-ballot { box-shadow:none; }
+    #printArea .btn { display:none !important; }
   }
 </style>
 </head>
@@ -102,6 +112,15 @@ if (!Session.guard()) { throw new Error('redirect'); }
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+/* ปี/โรงเรียน/โลโก้ สำหรับหัวบัตร */
+var YEAR = '', SCHOOL = 'โรงเรียนบ้านละลม', LOGO = '';
+try { LOGO = localStorage.getItem('el_logo') || ''; } catch (e) {}
+if (!LOGO && typeof SCHOOL_LOGO !== 'undefined') { LOGO = SCHOOL_LOGO; }
+API.call('getSettings', {}, function (s) {
+  YEAR = s.academicYear || YEAR;
+  SCHOOL = s.schoolName || SCHOOL;
+}, function () {});
 
 /* ---------- สลับแท็บ ---------- */
 var tabs = document.querySelectorAll('#qrTabs .qr-tab');
@@ -235,16 +254,26 @@ function makeStudentQr(sid) {
     Swal.close();
     var area = document.getElementById('printArea');
     area.innerHTML =
-      '<div class="qr-card">' +
-      '<div id="qrBox"></div>' +
-      '<div class="qn">' + esc(d.name) + '</div>' +
-      '<div class="qm">เลขประจำตัว ' + esc(d.studentId) + ' · ชั้น ' + esc(d.room) + '</div>' +
-      '<button class="btn sm" id="printBtn" style="margin-top:14px">พิมพ์บัตรนี้</button>' +
+      '<div class="qr-card"><div class="qr-ballot">' +
+        '<div class="qb-strip"></div>' +
+        '<div class="qb-head">' +
+          '<div class="qb-logo" id="qbLogo"></div>' +
+          '<div class="qb-title">บัตรเลือกตั้งประธานสภานักเรียน</div>' +
+          '<div class="qb-sub">ประจำปีการศึกษา ' + esc(YEAR || '—') + '</div>' +
+          '<div class="qb-school">' + esc(SCHOOL) + '</div>' +
+        '</div>' +
+        '<div class="qb-qr" id="qrBox"></div>' +
+        '<div class="qb-name">' + esc(d.name) + '</div>' +
+        '<div class="qb-meta">เลขประจำตัว ' + esc(d.studentId) + ' · ชั้น ' + esc(d.room) + '</div>' +
+        '<div class="qb-foot">ตัดตามเส้น แล้วแปะไว้หลังบัตรประจำตัวนักเรียน</div>' +
+      '</div>' +
+      '<button class="btn sm" id="printBtn" style="margin:16px auto 0;display:block">พิมพ์บัตรนี้</button>' +
       '</div>';
+    if (LOGO) { document.getElementById('qbLogo').style.backgroundImage = 'url("' + LOGO + '")'; }
     var box = document.getElementById('qrBox');
     box.innerHTML = '';
     /* วาดคิวอาร์ในเบราว์เซอร์เอง รหัสบัตรไม่ถูกส่งไปบริการภายนอก */
-    new QRCode(box, { text: d.payload, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    new QRCode(box, { text: d.payload, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
     document.getElementById('printBtn').onclick = function () { window.print(); };
     area.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, function (msg) {
