@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สร้างคิวอาร์ — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .qr-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 22px; }
+  .qr-tab { font-family:'Bai Jamjuree',sans-serif; font-weight:500; font-size:1rem; padding:12px 22px; border:1px solid var(--rule); background:var(--card); color:var(--ink); border-radius:6px; cursor:pointer; transition:all .15s; }
+  .qr-tab:hover { border-color:var(--violet); }
+  .qr-tab.on { background:var(--violet); border-color:var(--violet); color:var(--violet-ink); }
+  .qr-panel { display:none; }
+  .qr-panel.on { display:block; }
+  .stu-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--rule); border-radius:8px; background:var(--paper); margin-bottom:8px; }
+  .stu-row .meta { font-size:.8rem; color:var(--ink-faint); }
+  .qr-card { text-align:center; padding:24px; border:1px solid var(--rule); border-radius:12px; background:var(--card); max-width:340px; margin:14px auto 0; }
+  .qr-card #qrBox { display:flex; justify-content:center; margin-bottom:14px; }
+  .qr-card #qrBox img, .qr-card #qrBox canvas { border:6px solid #fff; border-radius:8px; }
+  .qr-card .qn { font-family:'Bai Jamjuree',sans-serif; font-weight:600; font-size:1.1rem; color:var(--ink); }
+  .qr-card .qm { font-size:.86rem; color:var(--ink-soft); margin-top:2px; }
+  @media print {
+    body * { visibility:hidden !important; }
+    #printArea, #printArea * { visibility:visible !important; }
+    #printArea { position:absolute; left:0; top:0; width:100%; display:flex !important; justify-content:center; padding-top:30px; }
+    #printArea .qr-card { border:none; box-shadow:none; }
+  }
+</style>
+</head>
+<body data-page="qr.html" data-title="สร้างคิวอาร์ประจำตัวนักเรียน" data-sub="สำหรับพิมพ์แปะหลังบัตรนักเรียน" data-doc="ปีการศึกษา 2569<br>เฉพาะผู้ดูแลระบบ">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+
+  <div class="wrap">
+  <div class="sheet">
+
+    <section style="padding-top:28px" class="reveal">
+      <span class="eyebrow">คิวอาร์ประจำตัวนักเรียน</span>
+      <h2>สร้างบัตรคิวอาร์</h2>
+      <p class="lead">เลือกวิธีสร้างได้ตามต้องการ ทั้งโรงเรียน เฉพาะห้อง หรือรายคน คิวอาร์ใช้คู่กับเลขประจำตัวตอนสแกนเข้าคูหา ถ้าออกรหัสบัตรใหม่ให้สร้างและพิมพ์ใหม่ทั้งหมด</p>
+
+      <div class="qr-tabs" id="qrTabs">
+        <button class="qr-tab on" data-mode="all">ทั้งหมด (ทุกห้อง)</button>
+        <button class="qr-tab" data-mode="room">รายห้อง</button>
+        <button class="qr-tab" data-mode="student">รายคน</button>
+      </div>
+
+      <!-- โหมด: ทั้งหมด -->
+      <div class="qr-panel on" id="panel-all">
+        <p class="muted" style="margin-bottom:14px">สร้างไฟล์ PDF แยกเป็นห้องละไฟล์ เก็บในโฟลเดอร์ QR บนไดรฟ์ ระบบทำทีละห้องอัตโนมัติ</p>
+        <button class="btn" id="genAll">สร้างคิวอาร์ทุกห้อง</button>
+        <div id="allResult" style="margin-top:16px"></div>
+      </div>
+
+      <!-- โหมด: รายห้อง -->
+      <div class="qr-panel" id="panel-room">
+        <div class="grid g2" style="align-items:end">
+          <div class="field" style="margin:0">
+            <label for="roomSel">เลือกห้อง</label>
+            <select id="roomSel"><option value="">กำลังโหลดรายชื่อห้อง…</option></select>
+          </div>
+          <div class="field" style="margin:0">
+            <button class="btn wide" id="genRoom">สร้างคิวอาร์ห้องนี้</button>
+          </div>
+        </div>
+        <div id="roomResult" style="margin-top:16px"></div>
+      </div>
+
+      <!-- โหมด: รายคน -->
+      <div class="qr-panel" id="panel-student">
+        <div class="grid g2" style="align-items:end">
+          <div class="field" style="margin:0">
+            <label for="stuQuery">ค้นหานักเรียน (เลขประจำตัว หรือ ชื่อ)</label>
+            <input id="stuQuery" type="text" placeholder="เช่น 13001 หรือ สมชาย">
+          </div>
+          <div class="field" style="margin:0">
+            <button class="btn wide ghost" id="stuSearch">ค้นหา</button>
+          </div>
+        </div>
+        <div id="stuList" style="margin-top:14px"></div>
+        <div id="printArea"></div>
+      </div>
+    </section>
+
+  </div>
+  </div>
+
+  <div class="foot">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+if (!Session.guard()) { throw new Error('redirect'); }
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ---------- สลับแท็บ ---------- */
+var tabs = document.querySelectorAll('#qrTabs .qr-tab');
+for (var t = 0; t < tabs.length; t++) {
+  tabs[t].onclick = function () {
+    var mode = this.getAttribute('data-mode');
+    for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('on'); }
+    this.classList.add('on');
+    var panels = document.querySelectorAll('.qr-panel');
+    for (var p = 0; p < panels.length; p++) { panels[p].classList.remove('on'); }
+    document.getElementById('panel-' + mode).classList.add('on');
+    if (mode === 'room' && !roomsLoaded) { loadRooms(); }
+  };
+}
+
+/* ---------- โหมดทั้งหมด: วนสร้างทีละห้อง ---------- */
+document.getElementById('genAll').onclick = function () {
+  var btn = this;
+  if (!lockBtn(btn, 'กำลังเตรียม…')) { return; }
+  var box = document.getElementById('allResult');
+  box.innerHTML = '';
+
+  API.call('qrRooms', {}, function (data) {
+    var rooms = data.rooms || [];
+    var folderUrl = data.folderUrl || '';
+    if (!rooms.length) {
+      unlockBtn(btn);
+      Swal.fire({ icon: 'info', title: 'ยังไม่มีห้อง', text: 'ต้องนำเข้าผู้มีสิทธิ์ก่อน', confirmButtonText: 'ปิด' });
+      return;
+    }
+    box.innerHTML = '<p class="muted" style="margin-bottom:8px">เตรียมสร้าง ' + rooms.length + ' ห้อง…</p>';
+    var idx = 0, okc = 0, failc = 0;
+
+    function finish() {
+      unlockBtn(btn);
+      btn.textContent = 'สร้างคิวอาร์ทุกห้อง';
+      var head = '<p style="margin-bottom:10px"><b>เสร็จแล้ว</b> — สำเร็จ ' + okc + ' ห้อง' + (failc ? ' · ไม่สำเร็จ ' + failc + ' ห้อง' : '') + '</p>';
+      if (folderUrl) { head += '<a class="btn sm ghost" href="' + esc(folderUrl) + '" target="_blank" rel="noopener">เปิดโฟลเดอร์ QR บนไดรฟ์</a>'; }
+      box.insertAdjacentHTML('afterbegin', head);
+      Swal.fire({ icon: 'success', title: 'สร้างคิวอาร์เสร็จ', timer: 1600, showConfirmButton: false });
+    }
+
+    function next() {
+      if (idx >= rooms.length) { finish(); return; }
+      var room = rooms[idx];
+      btn.textContent = 'กำลังสร้าง ' + room + ' (' + (idx + 1) + '/' + rooms.length + ')';
+      API.call('generateQrRoom', { room: room }, function (r) {
+        okc++;
+        box.insertAdjacentHTML('beforeend', '<div class="mini"><span>' + esc(room) + ' · ' + (r.count || 0) + ' คน</span>' +
+          '<b><a href="' + esc(r.fileUrl) + '" target="_blank" rel="noopener">เปิด PDF</a></b></div>');
+        idx++; next();
+      }, function () {
+        failc++;
+        box.insertAdjacentHTML('beforeend', '<div class="mini"><span>' + esc(room) + '</span><b style="color:var(--stamp)">ไม่สำเร็จ</b></div>');
+        idx++; next();
+      });
+    }
+    next();
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'สร้างไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+/* ---------- โหมดรายห้อง ---------- */
+var roomsLoaded = false;
+function loadRooms() {
+  API.call('qrRooms', {}, function (data) {
+    roomsLoaded = true;
+    var rooms = data.rooms || [];
+    var sel = document.getElementById('roomSel');
+    if (!rooms.length) { sel.innerHTML = '<option value="">ยังไม่มีห้อง (นำเข้าผู้มีสิทธิ์ก่อน)</option>'; return; }
+    var html = '';
+    for (var i = 0; i < rooms.length; i++) { html += '<option value="' + esc(rooms[i]) + '">' + esc(rooms[i]) + '</option>'; }
+    sel.innerHTML = html;
+  }, function () {
+    document.getElementById('roomSel').innerHTML = '<option value="">โหลดห้องไม่สำเร็จ</option>';
+  });
+}
+
+document.getElementById('genRoom').onclick = function () {
+  var btn = this;
+  var room = document.getElementById('roomSel').value;
+  if (!room) { Swal.fire({ icon: 'warning', title: 'เลือกห้องก่อน', confirmButtonText: 'ปิด' }); return; }
+  if (!lockBtn(btn, 'กำลังสร้าง…')) { return; }
+  showLoading('กำลังสร้างคิวอาร์', 'ห้อง ' + room);
+  API.call('generateQrRoom', { room: room }, function (r) {
+    unlockBtn(btn);
+    Swal.close();
+    document.getElementById('roomResult').innerHTML =
+      '<div class="mini"><span><b>' + esc(r.room) + '</b> · ' + (r.count || 0) + ' คน</span>' +
+      '<b><a href="' + esc(r.fileUrl) + '" target="_blank" rel="noopener">เปิด PDF</a></b></div>';
+    Swal.fire({ icon: 'success', title: 'สร้างห้อง ' + esc(r.room) + ' แล้ว', timer: 1500, showConfirmButton: false });
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'สร้างไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+/* ---------- โหมดรายคน ---------- */
+function doStuSearch() {
+  var q = document.getElementById('stuQuery').value.trim();
+  var list = document.getElementById('stuList');
+  list.innerHTML = '<p class="muted">กำลังค้นหา…</p>';
+  API.call('listVoters', { query: q, offset: 0, limit: 30 }, function (data) {
+    var vs = data.voters || [];
+    if (!vs.length) { list.innerHTML = '<p class="muted">ไม่พบนักเรียนที่ค้นหา</p>'; return; }
+    var html = '';
+    for (var i = 0; i < vs.length; i++) {
+      var v = vs[i];
+      html += '<div class="stu-row"><div><b>' + esc(v.name) + '</b>' +
+        '<div class="meta">เลขประจำตัว ' + esc(v.studentId) + ' · ชั้น ' + esc(v.grade || v.room) + '</div></div>' +
+        '<button class="btn sm" data-sid="' + esc(v.studentId) + '">สร้างคิวอาร์</button></div>';
+    }
+    if (data.matched > vs.length) { html += '<p class="muted" style="margin-top:6px">แสดง ' + vs.length + ' จาก ' + data.matched + ' คน — พิมพ์ค้นหาให้เจาะจงขึ้น</p>'; }
+    list.innerHTML = html;
+    var btns = list.querySelectorAll('[data-sid]');
+    for (var k = 0; k < btns.length; k++) {
+      btns[k].onclick = function () { makeStudentQr(this.getAttribute('data-sid')); };
+    }
+  }, function (msg) {
+    list.innerHTML = '<p class="muted">ค้นหาไม่สำเร็จ ' + esc(msg) + '</p>';
+  });
+}
+document.getElementById('stuSearch').onclick = doStuSearch;
+document.getElementById('stuQuery').onkeydown = function (e) { if (e.key === 'Enter') { doStuSearch(); } };
+
+function makeStudentQr(sid) {
+  showLoading('กำลังสร้างคิวอาร์', 'เลขประจำตัว ' + sid);
+  API.call('studentQr', { studentId: sid }, function (d) {
+    Swal.close();
+    var area = document.getElementById('printArea');
+    area.innerHTML =
+      '<div class="qr-card">' +
+      '<div id="qrBox"></div>' +
+      '<div class="qn">' + esc(d.name) + '</div>' +
+      '<div class="qm">เลขประจำตัว ' + esc(d.studentId) + ' · ชั้น ' + esc(d.room) + '</div>' +
+      '<button class="btn sm" id="printBtn" style="margin-top:14px">พิมพ์บัตรนี้</button>' +
+      '</div>';
+    var box = document.getElementById('qrBox');
+    box.innerHTML = '';
+    /* วาดคิวอาร์ในเบราว์เซอร์เอง รหัสบัตรไม่ถูกส่งไปบริการภายนอก */
+    new QRCode(box, { text: d.payload, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    document.getElementById('printBtn').onclick = function () { window.print(); };
+    area.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, function (msg) {
+    Swal.fire({ icon: 'error', title: 'สร้างไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+}
+</script>
+</body>
+</html>
