@@ -160,12 +160,16 @@ function loadTallySetup() {
       html += '<div class="tally-cell" data-c="' + no + '"><div class="n" id="t' + no + '">0</div>' +
         '<div class="l">เบอร์ ' + esc(no) + ' ' + esc(cs[i].party) + '</div></div>';
     }
+    tally['none'] = 0;
     tally['0'] = 0;
+    html += '<div class="tally-cell" data-c="none"><div class="n" id="tnone">0</div><div class="l">ไม่ประสงค์ลงคะแนน</div></div>';
     html += '<div class="tally-cell" data-c="0"><div class="n" id="t0">0</div><div class="l">บัตรเสีย</div></div>';
     document.getElementById('tally').innerHTML = html;
   }, function () {
-    /* โหลดไม่ได้ อย่างน้อยมีช่องบัตรเสีย ไว้เริ่มนับได้ */
+    /* โหลดไม่ได้ อย่างน้อยมีช่องไม่ประสงค์+บัตรเสีย ไว้เริ่มนับได้ */
+    tally['none'] = 0; tally['0'] = 0;
     document.getElementById('tally').innerHTML =
+      '<div class="tally-cell" data-c="none"><div class="n" id="tnone">0</div><div class="l">ไม่ประสงค์ลงคะแนน</div></div>' +
       '<div class="tally-cell" data-c="0"><div class="n" id="t0">0</div><div class="l">บัตรเสีย</div></div>';
   });
 }
@@ -243,6 +247,13 @@ function presentBallot(b, afterShow) {
       stamp.textContent = 'บัตรเสีย';
       stamp.style.color = 'var(--stamp)';
       stamp.style.borderColor = 'var(--stamp)';
+    } else if (b.choice === 'none') {
+      big.className = 'bignum-c blank';
+      big.textContent = '✓';
+      party.textContent = 'ไม่ประสงค์ลงคะแนน';
+      stamp.textContent = 'บัตรดี';
+      stamp.style.color = 'var(--verify)';
+      stamp.style.borderColor = 'var(--verify)';
     } else {
       big.className = 'bignum-c';
       big.textContent = b.choice;
@@ -264,7 +275,9 @@ function presentBallot(b, afterShow) {
 function sayBallot(choice, onDone) {
   var rate = parseFloat(document.getElementById('voiceRate').value) || 0.6;
   var msg = (choice === '0')
-    ? 'บัตรเสีย ... ไม่ประสงค์ลงคะแนน'
+    ? 'บัตรเสีย'
+    : (choice === 'none')
+    ? 'บัตรดี ... ไม่ประสงค์ลงคะแนน'
     : 'บัตรดี ... หมายเลข ... ' + choice + (PARTY[choice] ? ' ... ' + PARTY[choice] : '');
   Voice.say(msg, { rate: rate, onend: onDone });
 }
@@ -391,7 +404,7 @@ function speakSummary() {
   Swal.fire({
     icon: 'info',
     title: 'สรุปยอด ' + idx + ' ใบ',
-    html: line + '<br>บัตรเสีย ' + (tally['0'] || 0) + ' ใบ',
+    html: line + '<br>ไม่ประสงค์ ' + (tally['none'] || 0) + ' &middot; บัตรเสีย ' + (tally['0'] || 0) + ' ใบ',
     timer: 3000,
     timerProgressBar: true,
     showConfirmButton: false
@@ -430,6 +443,7 @@ function finish() {
   for (var i = 0; i < nos.length; i++) {
     rows += 'เบอร์ ' + esc(nos[i]) + ' ' + esc(PARTY[nos[i]]) + ' &mdash; <b>' + (tally[nos[i]] || 0) + '</b><br>';
   }
+  rows += 'ไม่ประสงค์ลงคะแนน &mdash; <b>' + (tally['none'] || 0) + '</b><br>';
   rows += 'บัตรเสีย &mdash; <b>' + (tally['0'] || 0) + '</b>';
   var winLine = (winner !== null)
     ? '<br><br><span style="color:var(--verify);font-weight:600">ผู้ชนะคือเบอร์ ' + esc(winner) + ' ' + esc(PARTY[winner]) + '</span>'
