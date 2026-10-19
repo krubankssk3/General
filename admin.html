@@ -240,6 +240,7 @@
 
         <div class="field">
           <label>สมาชิกทีม (ใส่รูปโปรไฟล์รายคนได้)</label>
+          <p class="mem-hint">ใส่ช่อง “ตำแหน่ง” เช่น รองประธาน เลขานุการ เหรัญญิก → จะขึ้นผังโยงเส้นจากประธาน · เว้นว่างไว้ = เป็นสมาชิกทั่วไป อยู่แถวล่าง</p>
           <div id="memList" class="mem-list"></div>
           <button class="btn sm ghost" type="button" id="memAdd">+ เพิ่มสมาชิก</button>
           <input type="file" id="memPhotoFile" accept="image/png,image/jpeg,image/webp" style="display:none">
@@ -810,6 +811,7 @@ function syncMembersFromInputs() {
     if (!MEMBERS[idx]) { continue; }
     MEMBERS[idx].name = rows[i].querySelector('.mem-name').value;
     MEMBERS[idx].room = rows[i].querySelector('.mem-room').value;
+    MEMBERS[idx].role = rows[i].querySelector('.mem-role').value;
   }
 }
 function renderMembers() {
@@ -820,6 +822,7 @@ function renderMembers() {
       '<div class="mem-ava" data-ava="' + i + '" title="ใส่/เปลี่ยนรูป"><small>ใส่รูป</small></div>' +
       '<input class="mem-name" type="text" placeholder="ชื่อ-นามสกุล" value="' + esc(MEMBERS[i].name || '') + '">' +
       '<input class="mem-room" type="text" placeholder="ชั้น เช่น ม.2/1" value="' + esc(MEMBERS[i].room || '') + '">' +
+      '<input class="mem-role" type="text" placeholder="ตำแหน่ง (เว้นว่าง=สมาชิก)" value="' + esc(MEMBERS[i].role || '') + '">' +
       '<button class="mem-del" type="button" data-del="' + i + '" title="ลบสมาชิก">&times;</button></div>';
   }
   box.innerHTML = html;
@@ -845,7 +848,7 @@ function renderMembers() {
 }
 document.getElementById('memAdd').onclick = function () {
   syncMembersFromInputs();
-  MEMBERS.push({ name: '', room: '', photo: '' });
+  MEMBERS.push({ name: '', room: '', photo: '', role: '' });
   renderMembers();
 };
 document.getElementById('memPhotoFile').onchange = function () {
@@ -893,7 +896,12 @@ document.getElementById('cSave').onclick = function () {
   var cleanMem = [];
   for (var mi = 0; mi < MEMBERS.length; mi++) {
     if (String(MEMBERS[mi].name || '').trim() || MEMBERS[mi].photo) {
-      cleanMem.push({ name: String(MEMBERS[mi].name || '').trim(), room: String(MEMBERS[mi].room || '').trim(), photo: MEMBERS[mi].photo || '' });
+      cleanMem.push({
+        name: String(MEMBERS[mi].name || '').trim(),
+        room: String(MEMBERS[mi].room || '').trim(),
+        role: String(MEMBERS[mi].role || '').trim(),
+        photo: MEMBERS[mi].photo || ''
+      });
     }
   }
   var payload = {
