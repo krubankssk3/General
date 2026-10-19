@@ -50,12 +50,6 @@
           <div><div class="name">ไม่ประสงค์ลงคะแนน</div><div class="lead2">มาใช้สิทธิ์ แต่เลือกที่จะไม่ลงให้ผู้สมัครหมายเลขใด</div></div>
           <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
         </div>
-
-        <div class="row" data-v="0" tabindex="0" role="button" style="background:var(--paper)">
-          <div class="no" style="border-style:dashed;font-size:1.2rem;line-height:2.1">—</div>
-          <div><div class="name">บัตรเสีย</div><div class="lead2">บัตรที่กาผิดกติกา หรือกาหลายช่อง</div></div>
-          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
-        </div>
       </div>
 
       <button class="btn primary wide reveal" id="submit" style="margin-top:20px;--d:.24s" disabled>ยืนยันการลงคะแนน</button>
@@ -138,10 +132,7 @@ function choose(row) {
   row.classList.add('picked');
   pick = row.getAttribute('data-v');
   submit.disabled = false;
-  submit.textContent =
-    pick === '0' ? 'ยืนยัน — บัตรเสีย'
-    : pick === 'none' ? 'ยืนยัน — ไม่ประสงค์ลงคะแนน'
-    : 'ยืนยัน — เลือกหมายเลข ' + pick;
+  submit.textContent = pick === 'none' ? 'ยืนยัน — ไม่ประสงค์ลงคะแนน' : 'ยืนยัน — เลือกหมายเลข ' + pick;
 }
 
 /* ผูกการกดกับทุกแถวที่เลือกได้ (เรียกใหม่หลังเติมผู้สมัคร) */
@@ -158,8 +149,7 @@ function bindRows() {
 bindRows();
 
 submit.onclick = function () {
-  var who = pick === '0' ? 'บัตรเสีย'
-          : pick === 'none' ? 'ไม่ประสงค์ลงคะแนน'
+  var who = pick === 'none' ? 'ไม่ประสงค์ลงคะแนน'
           : 'หมายเลข ' + pick + ' — ' + document.querySelector('.row.picked .name').textContent;
 
   Swal.fire({
