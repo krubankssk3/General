@@ -18,8 +18,8 @@
   <section class="reveal">
     <span class="eyebrow">สถานะการเลือกตั้ง</span>
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:18px">
-      <span class="pill open"><span class="dot"></span> เปิดหีบแล้ว</span>
-      <span class="muted">ปิดหีบใน <b class="mono" id="cd" style="font-size:.95rem;color:var(--ink)">--:--:--</b></span>
+      <span class="pill wait" id="statusPill"><span class="dot"></span> <span id="statusText">กำลังโหลดสถานะ…</span></span>
+      <span class="muted" id="statusNote"></span>
     </div>
 
     <h2>ทุกเสียงของเรา นับได้จริง ตรวจสอบได้จริง</h2>
@@ -126,20 +126,30 @@ function fillStats() {
 
     document.getElementById('bar').style.width = pct + '%';
     document.getElementById('pct').textContent = pct + '%';
+
+    paintStatus(data.status);
   }, function () {});
+}
+
+/* แสดงสถานะจริงจากเซิร์ฟเวอร์ แทนตัวนับถอยหลังปลอม */
+var STATUS_INFO = {
+  prepare:   { cls: 'wait', text: 'ยังไม่เปิดหีบ',  note: 'อยู่ระหว่างเตรียมการ' },
+  open:      { cls: 'open', text: 'เปิดหีบแล้ว',    note: 'กำลังรับลงคะแนน' },
+  closed:    { cls: 'shut', text: 'ปิดหีบแล้ว',     note: 'กำลังนับคะแนน' },
+  published: { cls: 'open', text: 'ประกาศผลแล้ว',   note: 'ดูผลได้ที่หน้าผลและสถิติ' }
+};
+function paintStatus(status) {
+  var info = STATUS_INFO[status] || STATUS_INFO.prepare;
+  var pill = document.getElementById('statusPill');
+  if (pill) { pill.className = 'pill ' + info.cls; }
+  var t = document.getElementById('statusText');
+  if (t) { t.textContent = info.text; }
+  var n = document.getElementById('statusNote');
+  if (n) { n.textContent = info.note; }
 }
 
 setTimeout(fillStats, 300);
 setInterval(fillStats, 8000);
-
-/* นับถอยหลังปิดหีบ — ของจริงต้องอ่านเวลาจากฝั่งเซิร์ฟเวอร์เท่านั้น */
-var end = new Date().getTime() + (2 * 3600 + 41 * 60 + 8) * 1000;
-setInterval(function () {
-  var d = Math.max(0, end - new Date().getTime());
-  var s = Math.floor(d / 1000);
-  document.getElementById('cd').textContent =
-    pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
-}, 1000);
 
 /* ---- โหลดผู้สมัครจริงพร้อมรูปโปสเตอร์ ---- */
 function esc(s) {
