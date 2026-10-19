@@ -214,6 +214,39 @@
   </section>
 
   <section>
+    <span class="eyebrow reveal">บัญชีเจ้าหน้าที่</span>
+    <h2 class="reveal">จัดการผู้ใช้งานระบบ</h2>
+    <p class="lead reveal">เพิ่มกรรมการประจำหน่วยและผู้สังเกตการณ์ หรือเปลี่ยนรหัสผ่าน แอดมินหลักควรเปลี่ยนรหัส admin2569 เป็นรหัสของตัวเองก่อนใช้งานจริง</p>
+
+    <div class="scroll reveal" style="margin-top:20px">
+      <table id="acctTable">
+        <thead><tr><th>ชื่อผู้ใช้</th><th>บทบาท</th><th>ชื่อแสดง</th><th style="text-align:right">จัดการ</th></tr></thead>
+        <tbody id="acctBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card reveal" style="margin-top:18px">
+      <h3 style="margin-bottom:14px" id="acctFormTitle">เพิ่มบัญชีใหม่</h3>
+      <div class="grid g2">
+        <div class="field"><label>ชื่อผู้ใช้</label><input id="aUser" type="text" placeholder="unit01"></div>
+        <div class="field"><label>ชื่อแสดง</label><input id="aName" type="text" placeholder="กรรมการหน่วยที่ 1"></div>
+        <div class="field"><label>บทบาท</label>
+          <select id="aRole">
+            <option value="staff">กรรมการหน่วย (staff)</option>
+            <option value="observe">ผู้สังเกตการณ์ (observe)</option>
+            <option value="admin">ผู้ดูแลระบบ (admin)</option>
+          </select>
+        </div>
+        <div class="field"><label>รหัสผ่าน <span class="muted" id="aPassHint">(อย่างน้อย 4 ตัว)</span></label><input id="aPass" type="text" placeholder="ตั้งรหัสผ่าน"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:6px">
+        <button class="btn primary" id="aSave">บันทึกบัญชี</button>
+        <button class="btn ghost" id="aClear">ล้างฟอร์ม</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <span class="eyebrow reveal">ข้อมูลทดสอบ</span>
     <h2 class="reveal">ข้อมูลจำลองสำหรับซ้อมระบบ</h2>
     <p class="lead reveal">ใช้ตอนซ้อมก่อนวันจริง ใส่ข้อมูลปลอมเข้าไปทดลองทั้งวงจร แล้วล้างออกก่อนเริ่มใช้งานจริง</p>
@@ -644,6 +677,105 @@ document.getElementById('notifyLine').onclick = function () {
   });
 };
 
+/* ================= จัดการบัญชีเจ้าหน้าที่ ================= */
+
+var ROLE_TH = { admin: 'ผู้ดูแลระบบ', staff: 'กรรมการหน่วย', observe: 'ผู้สังเกตการณ์' };
+
+function loadAccounts() {
+  API.call('listAccounts', {}, function (data) {
+    var tb = document.getElementById('acctBody');
+    var list = data.accounts || [];
+    if (!list.length) { tb.innerHTML = '<tr><td colspan="4" class="muted">ยังไม่มีบัญชี</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var a = list[i];
+      html += '<tr><td class="mono">' + esc(a.username) + '</td>' +
+        '<td>' + (ROLE_TH[a.role] || esc(a.role)) + '</td>' +
+        '<td>' + esc(a.displayName) + '</td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+        '<button class="btn sm ghost" data-edit=\'' + encodeURIComponent(JSON.stringify(a)) + '\'>แก้</button> ' +
+        '<button class="btn sm ghost" data-del="' + esc(a.username) + '">ลบ</button></td></tr>';
+    }
+    tb.innerHTML = html;
+
+    var edits = tb.querySelectorAll('[data-edit]');
+    for (var e = 0; e < edits.length; e++) {
+      edits[e].onclick = function () { fillAcct(JSON.parse(decodeURIComponent(this.getAttribute('data-edit')))); };
+    }
+    var dels = tb.querySelectorAll('[data-del]');
+    for (var d = 0; d < dels.length; d++) {
+      dels[d].onclick = function () { delAccount(this.getAttribute('data-del')); };
+    }
+  }, function () {});
+}
+
+function fillAcct(a) {
+  document.getElementById('aUser').value = a.username;
+  document.getElementById('aUser').setAttribute('readonly', 'readonly');
+  document.getElementById('aName').value = a.displayName;
+  document.getElementById('aRole').value = a.role;
+  document.getElementById('aPass').value = '';
+  document.getElementById('aPassHint').textContent = '(เว้นว่างไว้ถ้าไม่เปลี่ยนรหัส)';
+  document.getElementById('acctFormTitle').textContent = 'แก้ไขบัญชี ' + a.username;
+  document.getElementById('aUser').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function clearAcctForm() {
+  document.getElementById('aUser').value = '';
+  document.getElementById('aUser').removeAttribute('readonly');
+  document.getElementById('aName').value = '';
+  document.getElementById('aRole').value = 'staff';
+  document.getElementById('aPass').value = '';
+  document.getElementById('aPassHint').textContent = '(อย่างน้อย 4 ตัว)';
+  document.getElementById('acctFormTitle').textContent = 'เพิ่มบัญชีใหม่';
+}
+
+document.getElementById('aClear').onclick = clearAcctForm;
+
+document.getElementById('aSave').onclick = function () {
+  var btn = this;
+  var payload = {
+    username: document.getElementById('aUser').value.trim(),
+    displayName: document.getElementById('aName').value.trim(),
+    role: document.getElementById('aRole').value,
+    password: document.getElementById('aPass').value
+  };
+  if (!payload.username) {
+    Swal.fire({ icon: 'warning', title: 'กรอกชื่อผู้ใช้', confirmButtonText: 'ปิด' });
+    return;
+  }
+  if (!lockBtn(btn, 'กำลังบันทึก…')) { return; }
+  showLoading('กำลังบันทึกบัญชี');
+  API.call('saveAccount', payload, function (data) {
+    unlockBtn(btn);
+    clearAcctForm();
+    loadAccounts();
+    Swal.fire({ icon: 'success', title: data.action === 'added' ? 'เพิ่มบัญชีแล้ว' : 'แก้ไขบัญชีแล้ว', timer: 1500, showConfirmButton: false });
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+function delAccount(u) {
+  Swal.fire({
+    icon: 'warning', title: 'ลบบัญชี ' + u + '?',
+    text: 'ผู้ใช้นี้จะเข้าระบบไม่ได้อีก',
+    showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', reverseButtons: true
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    showLoading('กำลังลบ');
+    API.call('deleteAccount', { username: u }, function () {
+      loadAccounts();
+      Swal.fire({ icon: 'success', title: 'ลบแล้ว', timer: 1400, showConfirmButton: false });
+    }, function (msg) {
+      Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  });
+}
+
+loadAccounts();
+
 /* ================= ข้อมูลจำลอง ================= */
 
 document.getElementById('seedDemo').onclick = function () {
@@ -660,6 +792,7 @@ document.getElementById('seedDemo').onclick = function () {
     API.call('seedDemo', {}, function () {
       unlockBtn(btn);
       loadCandidates();
+      loadAccounts();
       loadStats();
       Swal.fire({ icon: 'success', title: 'ใส่ข้อมูลจำลองแล้ว', html: 'ระบบพร้อมให้ซ้อมทั้งวงจร', confirmButtonText: 'ปิด' });
     }, function (msg) {
@@ -686,6 +819,7 @@ document.getElementById('clearDemo').onclick = function () {
     API.call('clearDemo', {}, function () {
       unlockBtn(btn);
       loadCandidates();
+      loadAccounts();
       loadStats();
       Swal.fire({ icon: 'success', title: 'ล้างข้อมูลแล้ว', html: 'ระบบพร้อมรับข้อมูลจริง', confirmButtonText: 'ปิด' });
     }, function (msg) {
