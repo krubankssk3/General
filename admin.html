@@ -26,7 +26,7 @@
   @media (max-width:820px){ .phase { grid-template-columns:1fr 1fr; } }
 </style>
 </head>
-<body data-page="admin.html" data-title="แผงควบคุมผู้ดูแลระบบ" data-sub="เข้าใช้งานในชื่อ krubank · บทบาทผู้ดูแลระบบ" data-doc="ปีการศึกษา 2569<br>ผู้มีสิทธิ์ 412 คน">
+<body data-page="admin.html" data-title="แผงควบคุมผู้ดูแลระบบ" data-sub="เข้าใช้งานในชื่อ krubank · บทบาทผู้ดูแลระบบ" data-doc="ปีการศึกษา —<br>กำลังโหลด…">
 
 <div class="app">
   <aside class="side" id="side"></aside>
@@ -168,6 +168,26 @@
         <button class="btn primary" id="xlsxImport" style="display:none">นำเข้าทั้งหมด</button>
       </div>
     </div>
+
+    <div class="card reveal" style="margin-top:18px">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">รายชื่อในทะเบียน <span class="muted" id="vTotal"></span></h3>
+        <input id="vSearch" type="text" placeholder="ค้นหา เลขประจำตัว ชื่อ หรือชั้น" style="margin-left:auto;max-width:280px">
+      </div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>เลขประจำตัว</th><th>ชื่อ-นามสกุล</th><th>ชั้น</th><th>ใช้สิทธิ์</th><th style="text-align:right">จัดการ</th></tr></thead>
+          <tbody id="vBody"><tr><td colspan="5" class="muted">กำลังโหลด…</td></tr></tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span class="muted" id="vPageInfo"></span>
+        <div style="display:flex;gap:8px">
+          <button class="btn sm ghost" id="vPrev">ก่อนหน้า</button>
+          <button class="btn sm ghost" id="vNext">ถัดไป</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section>
@@ -238,6 +258,32 @@
         <p class="muted" style="margin-bottom:14px">ส่งประกาศผลไปยังผู้ติดตาม LINE OA ของโรงเรียน ทำได้หลังประกาศผลแล้ว</p>
         <button class="btn wide ghost" id="notifyLine">ส่งเข้า LINE</button>
       </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow reveal">ปีการศึกษา</span>
+    <h2 class="reveal">ปีการศึกษาปัจจุบัน <span style="color:var(--violet)" id="yearNow">—</span></h2>
+    <p class="lead reveal">เปลี่ยนปีได้เมื่อจะใช้ระบบปีถัดไป การขึ้นปีใหม่จะเก็บผลปีเก่าไว้ในประวัติ แล้วล้างข้อมูลลงคะแนนให้พร้อมเริ่มใหม่ โดยคงบัญชีเจ้าหน้าที่ไว้</p>
+
+    <div class="grid g2" style="margin-top:20px">
+      <div class="card reveal">
+        <h3 style="margin-bottom:12px">แก้ปีการศึกษาปัจจุบัน</h3>
+        <p class="muted" style="margin-bottom:14px">ใช้เมื่อพิมพ์ปีผิด ไม่ล้างข้อมูล แค่เปลี่ยนตัวเลขปีที่แสดงทุกหน้า</p>
+        <div class="field"><input id="yearInput" type="text" inputmode="numeric" placeholder="2569" maxlength="4"></div>
+        <button class="btn ghost" id="yearSave">บันทึกปี</button>
+      </div>
+      <div class="card reveal" style="border-color:var(--violet)">
+        <h3 style="margin-bottom:12px">ขึ้นปีการศึกษาใหม่</h3>
+        <p class="muted" style="margin-bottom:14px">เก็บผลปีนี้เข้าประวัติ แล้วล้างนักเรียน บัตร ผู้สมัคร เริ่มปีใหม่ (คงบัญชีและประวัติ)</p>
+        <div class="field"><input id="newYearInput" type="text" inputmode="numeric" placeholder="ปีใหม่ เช่น 2570" maxlength="4"></div>
+        <button class="btn primary" id="rolloverBtn">ขึ้นปีใหม่</button>
+      </div>
+    </div>
+
+    <div class="card reveal" style="margin-top:18px">
+      <h3 style="margin-bottom:12px">ผลการเลือกตั้งย้อนหลัง</h3>
+      <div id="historyBox"><p class="muted">ยังไม่มีประวัติ</p></div>
     </div>
   </section>
 
@@ -345,13 +391,28 @@ function loadStats() {
     countUp(document.getElementById('a1'), voted);
     countUp(document.getElementById('a2'), Math.max(total - voted, 0));
 
-    /* ปรับแถบสถานะให้ตรงกับ backend */
+    /* อัปเดตหัวหน้าให้เป็นจำนวนจริง ไม่ใช่ 412 ตายตัว */
+    var doc = document.querySelector('.doc-no');
+    if (doc) { doc.innerHTML = 'ปีการศึกษา ' + (CUR_YEAR || '—') + '<br>ผู้มีสิทธิ์ ' + fmt(total) + ' คน'; }
+
     if (data.status && STATUS_TO_STEP[data.status] !== undefined) {
       cur = STATUS_TO_STEP[data.status];
       repaint();
     }
   }, function () {});
 }
+
+var CUR_YEAR = '';
+function loadYear() {
+  API.call('getYear', {}, function (d) {
+    CUR_YEAR = d.year || '';
+    var el = document.getElementById('yearNow');
+    if (el) { el.textContent = CUR_YEAR || '—'; }
+    var inp = document.getElementById('yearInput');
+    if (inp && !inp.value) { inp.value = CUR_YEAR; }
+  }, function () {});
+}
+loadYear();
 loadStats();
 setInterval(loadStats, 15000);
 
@@ -860,6 +921,147 @@ document.getElementById('xlsxImport').onclick = function () {
     Swal.fire({ icon: 'error', title: 'นำเข้าไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
   });
 };
+
+/* ================= จัดการนักเรียนในทะเบียน ================= */
+
+var vOffset = 0, vLimit = 40, vQuery = '', vMatched = 0, vSearchTimer = null;
+
+function loadVoters() {
+  API.call('listVoters', { query: vQuery, offset: vOffset, limit: vLimit }, function (data) {
+    vMatched = data.matched || 0;
+    document.getElementById('vTotal').textContent = '(' + (data.total || 0) + ' คน)';
+    var tb = document.getElementById('vBody');
+    if (!data.voters.length) {
+      tb.innerHTML = '<tr><td colspan="5" class="muted">' + (vQuery ? 'ไม่พบที่ค้นหา' : 'ยังไม่มีนักเรียน') + '</td></tr>';
+    } else {
+      var html = '';
+      for (var i = 0; i < data.voters.length; i++) {
+        var v = data.voters[i];
+        html += '<tr><td class="mono">' + esc(v.studentId) + '</td><td>' + esc(v.name) + '</td><td>' + esc(v.grade) + '</td>' +
+          '<td>' + (v.used ? '<span style="color:var(--verify)">ใช้แล้ว</span>' : '<span class="muted">ยัง</span>') + '</td>' +
+          '<td style="text-align:right;white-space:nowrap">' +
+          '<button class="btn sm ghost" data-ve=\'' + encodeURIComponent(JSON.stringify(v)) + '\'>แก้</button> ' +
+          '<button class="btn sm ghost" data-vd="' + esc(v.studentId) + '">ลบ</button></td></tr>';
+      }
+      tb.innerHTML = html;
+      var es = tb.querySelectorAll('[data-ve]');
+      for (var e = 0; e < es.length; e++) { es[e].onclick = function () { editVoter(JSON.parse(decodeURIComponent(this.getAttribute('data-ve')))); }; }
+      var ds = tb.querySelectorAll('[data-vd]');
+      for (var d = 0; d < ds.length; d++) { ds[d].onclick = function () { delVoter(this.getAttribute('data-vd')); }; }
+    }
+    var from = vMatched ? vOffset + 1 : 0;
+    var to = Math.min(vOffset + vLimit, vMatched);
+    document.getElementById('vPageInfo').textContent = 'แสดง ' + from + '–' + to + ' จาก ' + vMatched;
+    document.getElementById('vPrev').disabled = vOffset <= 0;
+    document.getElementById('vNext').disabled = to >= vMatched;
+  }, function () {});
+}
+
+document.getElementById('vSearch').oninput = function () {
+  var q = this.value;
+  clearTimeout(vSearchTimer);
+  vSearchTimer = setTimeout(function () { vQuery = q.trim(); vOffset = 0; loadVoters(); }, 350);
+};
+document.getElementById('vPrev').onclick = function () { if (vOffset > 0) { vOffset -= vLimit; loadVoters(); } };
+document.getElementById('vNext').onclick = function () { if (vOffset + vLimit < vMatched) { vOffset += vLimit; loadVoters(); } };
+
+function editVoter(v) {
+  Swal.fire({
+    title: 'แก้ไข ' + v.studentId,
+    html: '<input id="evN" class="swal2-input" placeholder="ชื่อ-นามสกุล" value="' + esc(v.name) + '">' +
+          '<input id="evG" class="swal2-input" placeholder="ชั้น เช่น ม.1" value="' + esc(v.grade) + '">',
+    showCancelButton: true, confirmButtonText: 'บันทึก', cancelButtonText: 'ยกเลิก', reverseButtons: true,
+    preConfirm: function () {
+      return { name: document.getElementById('evN').value.trim(), grade: document.getElementById('evG').value.trim() };
+    }
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    showLoading('กำลังบันทึก');
+    API.call('updateVoter', { studentId: v.studentId, name: r.value.name, grade: r.value.grade }, function () {
+      loadVoters(); loadStats();
+      Swal.fire({ icon: 'success', title: 'แก้ไขแล้ว', timer: 1400, showConfirmButton: false });
+    }, function (msg) { Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' }); });
+  });
+}
+
+function delVoter(sid) {
+  Swal.fire({
+    icon: 'warning', title: 'ลบนักเรียน ' + sid + '?',
+    text: 'ลบออกจากทะเบียน พร้อมข้อมูลใบหน้า (ถ้ามี)',
+    showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', reverseButtons: true
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    showLoading('กำลังลบ');
+    API.call('deleteVoter', { studentId: sid }, function () {
+      loadVoters(); loadStats();
+      Swal.fire({ icon: 'success', title: 'ลบแล้ว', timer: 1400, showConfirmButton: false });
+    }, function (msg) { Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' }); });
+  });
+}
+
+loadVoters();
+
+/* ================= ปีการศึกษา ================= */
+
+document.getElementById('yearSave').onclick = function () {
+  var btn = this;
+  var y = document.getElementById('yearInput').value.trim();
+  if (!/^\d{4}$/.test(y)) {
+    Swal.fire({ icon: 'warning', title: 'ปีไม่ถูกต้อง', text: 'ต้องเป็นตัวเลข 4 หลัก เช่น 2569', confirmButtonText: 'ปิด' });
+    return;
+  }
+  if (!lockBtn(btn, 'กำลังบันทึก…')) { return; }
+  showLoading('กำลังบันทึกปี');
+  API.call('setYear', { year: y }, function (d) {
+    unlockBtn(btn); CUR_YEAR = d.year; loadYear(); loadStats();
+    Swal.fire({ icon: 'success', title: 'บันทึกปี ' + d.year + ' แล้ว', timer: 1600, showConfirmButton: false });
+  }, function (msg) { unlockBtn(btn); Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' }); });
+};
+
+document.getElementById('rolloverBtn').onclick = function () {
+  var btn = this;
+  var ny = document.getElementById('newYearInput').value.trim();
+  if (!/^\d{4}$/.test(ny)) {
+    Swal.fire({ icon: 'warning', title: 'ปีใหม่ไม่ถูกต้อง', text: 'ต้องเป็นตัวเลข 4 หลัก', confirmButtonText: 'ปิด' });
+    return;
+  }
+  Swal.fire({
+    icon: 'warning',
+    title: 'ขึ้นปีการศึกษา ' + ny + '?',
+    html: 'เก็บผลปี ' + (CUR_YEAR || '') + ' เข้าประวัติ แล้วล้างนักเรียน บัตร ผู้สมัคร เริ่มปีใหม่<br><b style="color:var(--stamp)">ข้อมูลลงคะแนนปีนี้จะถูกล้าง</b><br><br>พิมพ์ <b>' + ny + '</b> เพื่อยืนยัน',
+    input: 'text', inputPlaceholder: 'พิมพ์ ' + ny,
+    showCancelButton: true, confirmButtonText: 'ขึ้นปีใหม่', cancelButtonText: 'ยกเลิก', reverseButtons: true,
+    preConfirm: function (v) { if (v !== ny) { Swal.showValidationMessage('พิมพ์ปีให้ตรง'); } return v; }
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    if (!lockBtn(btn, 'กำลังขึ้นปีใหม่…')) { return; }
+    showLoading('กำลังขึ้นปีการศึกษาใหม่', 'เก็บผลเก่าและล้างข้อมูล');
+    API.call('rolloverYear', { newYear: ny }, function (d) {
+      unlockBtn(btn);
+      document.getElementById('newYearInput').value = '';
+      CUR_YEAR = d.newYear; loadYear(); loadStats(); loadVoters(); loadCandidates(); loadHistory();
+      Swal.fire({ icon: 'success', title: 'ขึ้นปี ' + d.newYear + ' แล้ว', html: 'เก็บผลปี ' + d.oldYear + ' ไว้ ' + d.archived + ' รายการ ระบบพร้อมเริ่มปีใหม่', confirmButtonText: 'ปิด' });
+    }, function (msg) { unlockBtn(btn); Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' }); });
+  });
+};
+
+function loadHistory() {
+  API.call('listHistory', {}, function (data) {
+    var box = document.getElementById('historyBox');
+    if (!data.years || !data.years.length) { box.innerHTML = '<p class="muted">ยังไม่มีประวัติ</p>'; return; }
+    var html = '';
+    for (var i = 0; i < data.years.length; i++) {
+      var y = data.years[i];
+      var win = null;
+      for (var k = 0; k < y.rows.length; k++) { if (y.rows[k].no !== '0' && (!win || y.rows[k].score > win.score)) { win = y.rows[k]; } }
+      html += '<div style="padding:12px 0;border-bottom:1px solid var(--rule)">' +
+        '<b style="font-family:\'Bai Jamjuree\',sans-serif">ปีการศึกษา ' + esc(y.year) + '</b> <span class="muted">· ผู้มีสิทธิ์ ' + esc(y.voters) + ' คน</span>' +
+        (win ? '<div style="color:var(--verify)">ผู้ชนะ เบอร์ ' + esc(win.no) + ' ' + esc(win.party) + ' (' + win.score + ' คะแนน)</div>' : '') + '</div>';
+    }
+    box.innerHTML = html;
+  }, function () {});
+}
+loadHistory();
 
 /* ================= จัดการบัญชีเจ้าหน้าที่ ================= */
 
