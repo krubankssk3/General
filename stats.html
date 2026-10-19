@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ผลและสถิติ — เลือกตั้งสภานักเรียน</title>
+<link rel="stylesheet" href="election.css">
+<style>
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .kpi { background:var(--card); border:1px solid var(--rule); border-radius:12px; padding:18px 20px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .kpi::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--violet); }
+  .kpi .lbl { font-size:.78rem; color:var(--ink-faint); font-family:'Bai Jamjuree',sans-serif; font-weight:500; }
+  .kpi .val { font-family:'Bai Jamjuree',sans-serif; font-size:2.4rem; font-weight:700; color:var(--ink); line-height:1.1; font-variant-numeric:tabular-nums; margin-top:4px; }
+  .kpi .val small { font-size:1rem; color:var(--ink-faint); font-weight:500; }
+
+  .ring-card { display:flex; align-items:center; gap:22px; }
+  .ring-card svg { flex:none; }
+
+  .res-row { display:grid; grid-template-columns:72px 1fr 110px; align-items:center; gap:18px; padding:16px 0; border-bottom:1px solid var(--rule); }
+  .res-row:last-child { border-bottom:none; }
+  .res-thumb { width:72px; height:72px; border-radius:10px; object-fit:cover; background:var(--violet-soft); }
+  .res-thumb.ph { display:flex; align-items:center; justify-content:center; font-family:'Bai Jamjuree',sans-serif; font-size:1.8rem; font-weight:700; color:var(--violet); }
+  .res-mid .nm { font-family:'Bai Jamjuree',sans-serif; font-size:1.1rem; font-weight:600; color:var(--ink); display:flex; align-items:center; gap:8px; }
+  .res-mid .crown { font-size:.72rem; font-weight:600; color:#B8860B; background:#FBEFC6; border:1px solid #E8D48A; border-radius:100px; padding:2px 10px; }
+  .res-bar { height:16px; background:var(--paper); border:1px solid var(--rule); border-radius:8px; overflow:hidden; margin-top:8px; }
+  .res-bar i { display:block; height:100%; background:linear-gradient(90deg,var(--violet),#9b82f0); width:0; transition:width 1s cubic-bezier(.16,1,.3,1); }
+  .res-row.win .res-bar i { background:linear-gradient(90deg,#12A47E,#5FE0B0); }
+  .res-sc { text-align:right; }
+  .res-sc .n { font-family:'Bai Jamjuree',sans-serif; font-size:1.9rem; font-weight:700; color:var(--ink); line-height:1; font-variant-numeric:tabular-nums; }
+  .res-sc .p { font-size:.78rem; color:var(--ink-faint); }
+
+  .hist-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .hist-card { background:var(--card); border:1px solid var(--rule); border-radius:12px; padding:20px; box-shadow:var(--shadow); }
+  .hist-card .yr { font-family:'Bai Jamjuree',sans-serif; font-size:1.3rem; font-weight:700; color:var(--ink); }
+  .hist-card .win { color:var(--verify); font-family:'Bai Jamjuree',sans-serif; font-weight:600; margin:6px 0 14px; }
+  .hbar { display:grid; grid-template-columns:54px 1fr 54px; align-items:center; gap:10px; margin-bottom:7px; font-size:.84rem; }
+  .hbar .t { height:10px; background:var(--paper); border:1px solid var(--rule); border-radius:5px; overflow:hidden; }
+  .hbar .t i { display:block; height:100%; background:var(--violet); }
+  .hbar.top .t i { background:var(--verify); }
+  .hbar .sc { text-align:right; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); }
+  .empty-note { border:1px dashed var(--rule); border-radius:12px; padding:40px 24px; text-align:center; color:var(--ink-faint); }
+  @media (max-width:900px){ .kpi-grid { grid-template-columns:1fr 1fr; } .hist-grid { grid-template-columns:1fr; } .ring-card { flex-direction:column; text-align:center; } }
+</style>
+</head>
+<body data-page="stats.html" data-title="ผลและสถิติการเลือกตั้ง" data-sub="ผลคะแนนปีปัจจุบันและย้อนหลัง" data-doc="">
+
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+  <div id="top"></div>
+
+  <div class="wrap">
+  <div class="sheet">
+
+    <section style="padding-top:28px" class="reveal">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lbl">ปีการศึกษา</div><div class="val" id="kYear">—</div></div>
+        <div class="kpi"><div class="lbl">ผู้มีสิทธิ์ทั้งหมด</div><div class="val" id="kTotal">0 <small>คน</small></div></div>
+        <div class="kpi"><div class="lbl">ผู้มาใช้สิทธิ์</div><div class="val" id="kVoted">0 <small>คน</small></div></div>
+        <div class="kpi"><div class="lbl">คิดเป็นร้อยละ</div><div class="val" id="kPct">0<small>%</small></div></div>
+      </div>
+
+      <div class="card reveal ring-card" style="margin-top:16px">
+        <svg width="130" height="130" viewBox="0 0 150 150" role="img" aria-label="สัดส่วนผู้มาใช้สิทธิ์">
+          <circle cx="75" cy="75" r="62" fill="none" stroke="var(--paper)" stroke-width="16"/>
+          <circle id="ring" cx="75" cy="75" r="62" fill="none" stroke="var(--violet)" stroke-width="16" stroke-linecap="round" stroke-dasharray="389" stroke-dashoffset="389" transform="rotate(-90 75 75)" style="transition:stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1)"/>
+        </svg>
+        <div>
+          <h3 id="statusLine" style="margin-bottom:4px">กำลังโหลด…</h3>
+          <p class="muted" id="statusSub">ดึงข้อมูลการเลือกตั้งปีปัจจุบัน</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <span class="eyebrow">ผลคะแนนปีนี้</span>
+      <h2 id="resultHead">ผลการเลือกตั้งปีปัจจุบัน</h2>
+      <div id="resultBox" style="margin-top:16px">
+        <div class="empty-note">กำลังโหลดผลคะแนน…</div>
+      </div>
+    </section>
+
+    <section class="reveal">
+      <span class="eyebrow">ย้อนหลัง</span>
+      <h2>ผลการเลือกตั้งปีก่อนๆ</h2>
+      <div id="histBox" style="margin-top:16px">
+        <div class="empty-note">กำลังโหลด…</div>
+      </div>
+    </section>
+
+  </div>
+  </div>
+
+  <div class="foot">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="config.js"></script>
+<script src="election.js"></script>
+<script>
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+var PARTY_FALLBACK = { '1': 'ละลมก้าวหน้า', '2': 'รวมใจบ้านละลม', '3': 'เพื่อนพัฒนา', '0': 'บัตรเสีย' };
+var CAND = {};
+
+/* โหลดผู้สมัครไว้ผูกชื่อ+รูปกับคะแนน */
+function loadCandMap(done) {
+  API.call('listCandidates', {}, function (data) {
+    (data.candidates || []).forEach(function (c) { CAND[c.no] = c; });
+    done();
+  }, function () { done(); });
+}
+
+/* KPI + วงแหวน + สถานะ */
+function loadKpi() {
+  API.call('getYear', {}, function (y) {
+    document.getElementById('kYear').textContent = y.year || '—';
+    var st = y.status;
+    var map = {
+      prepare: ['ยังไม่เปิดการเลือกตั้ง', 'อยู่ระหว่างเตรียมการ'],
+      open: ['กำลังเปิดหีบลงคะแนน', 'นักเรียนกำลังมาใช้สิทธิ์'],
+      closed: ['ปิดหีบแล้ว กำลังนับคะแนน', 'รอประกาศผลอย่างเป็นทางการ'],
+      published: ['ประกาศผลแล้ว', 'ผลการเลือกตั้งปีนี้เป็นทางการ']
+    };
+    var m = map[st] || ['', ''];
+    document.getElementById('statusLine').textContent = m[0];
+    document.getElementById('statusSub').textContent = m[1];
+  }, function () {});
+
+  API.call('live', {}, function (d) {
+    var total = d.total || 0, voted = d.voted || 0;
+    var pct = total > 0 ? Math.round(voted / total * 100) : 0;
+    countUp(document.getElementById('kTotal'), total);
+    countUp(document.getElementById('kVoted'), voted);
+    var kp = document.getElementById('kPct');
+    var n = 0;
+    var t = setInterval(function () { n++; if (n >= pct) { n = pct; clearInterval(t); } kp.innerHTML = n + '<small>%</small>'; }, 20);
+    document.getElementById('ring').style.strokeDashoffset = String(389 - 389 * pct / 100);
+  }, function () {});
+}
+
+/* ผลคะแนนปีนี้ */
+function loadResults() {
+  API.call('results', {}, function (data) {
+    var box = document.getElementById('resultBox');
+    if (data.locked) {
+      box.innerHTML = '<div class="empty-note">คะแนนรายเบอร์จะแสดงหลังประกาศผลอย่างเป็นทางการ</div>';
+      return;
+    }
+    var order = ['1', '2', '3', '0'];
+    var max = 1, winNo = null, winVal = -1;
+    for (var k = 0; k < order.length; k++) {
+      var v = data.tally[order[k]] || 0;
+      if (order[k] !== '0' && v > max) { max = v; }
+      if (order[k] !== '0' && v > winVal) { winVal = v; winNo = order[k]; }
+    }
+    var html = '<div class="card">';
+    for (var i = 0; i < order.length; i++) {
+      var c = order[i];
+      var sc = data.tally[c] || 0;
+      var party = (CAND[c] && CAND[c].party) || PARTY_FALLBACK[c] || ('หมายเลข ' + c);
+      var pct = data.total > 0 ? Math.round(sc / data.total * 100) : 0;
+      var thumb = (CAND[c] && CAND[c].photoUrl)
+        ? '<img class="res-thumb" src="' + esc(CAND[c].photoUrl) + '" alt="">'
+        : '<div class="res-thumb ph">' + (c === '0' ? '—' : esc(c)) + '</div>';
+      var isWin = (c === winNo && winVal > 0);
+      var w = (c === '0') ? 0 : Math.round(sc / max * 100);
+      html += '<div class="res-row' + (isWin ? ' win' : '') + '">' + thumb +
+        '<div class="res-mid"><div class="nm">' + esc(party) + (isWin ? '<span class="crown">ผู้ชนะ</span>' : '') + '</div>' +
+        '<div class="res-bar"><i data-w="' + w + '"></i></div></div>' +
+        '<div class="res-sc"><div class="n">' + sc + '</div><div class="p">' + pct + '%</div></div></div>';
+    }
+    html += '</div>';
+    box.innerHTML = html;
+    var bars = box.querySelectorAll('.res-bar i');
+    for (var j = 0; j < bars.length; j++) {
+      (function (b) { setTimeout(function () { b.style.width = b.getAttribute('data-w') + '%'; }, 200); })(bars[j]);
+    }
+  }, function () {
+    document.getElementById('resultBox').innerHTML = '<div class="empty-note">โหลดผลคะแนนไม่ได้</div>';
+  });
+}
+
+/* ผลย้อนหลัง */
+function loadHistory() {
+  API.call('listHistory', {}, function (data) {
+    var box = document.getElementById('histBox');
+    if (!data.years || !data.years.length) {
+      box.innerHTML = '<div class="empty-note">ยังไม่มีผลย้อนหลัง ประวัติจะเก็บเมื่อขึ้นปีการศึกษาใหม่</div>';
+      return;
+    }
+    var html = '<div class="hist-grid">';
+    for (var i = 0; i < data.years.length; i++) {
+      var y = data.years[i];
+      var cands = y.rows.filter(function (r) { return r.no !== '0'; });
+      var max = 1, win = null;
+      for (var k = 0; k < cands.length; k++) { if (cands[k].score > max) { max = cands[k].score; } if (!win || cands[k].score > win.score) { win = cands[k]; } }
+      var bars = '';
+      for (var j = 0; j < cands.length; j++) {
+        var r = cands[j];
+        var top = (win && r.no === win.no);
+        bars += '<div class="hbar' + (top ? ' top' : '') + '"><span>เบอร์ ' + esc(r.no) + '</span>' +
+          '<div class="t"><i style="width:' + Math.round(r.score / max * 100) + '%"></i></div>' +
+          '<span class="sc">' + r.score + '</span></div>';
+      }
+      html += '<div class="hist-card"><div class="yr">ปีการศึกษา ' + esc(y.year) + '</div>' +
+        (win ? '<div class="win">ผู้ชนะ เบอร์ ' + esc(win.no) + ' ' + esc(win.party) + '</div>' : '') +
+        '<div class="muted" style="font-size:.8rem;margin-bottom:12px">ผู้มีสิทธิ์ ' + esc(y.voters) + ' คน</div>' +
+        bars + '</div>';
+    }
+    html += '</div>';
+    box.innerHTML = html;
+  }, function () {
+    document.getElementById('histBox').innerHTML = '<div class="empty-note">โหลดประวัติไม่ได้</div>';
+  });
+}
+
+loadKpi();
+loadCandMap(loadResults);
+loadHistory();
+setInterval(loadKpi, 10000);
+</script>
+</body>
+</html>
