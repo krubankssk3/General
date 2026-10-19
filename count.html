@@ -255,6 +255,12 @@ function tallyPending() {
   idx++;
   pending = null;
   document.getElementById('progress').textContent = 'นับแล้ว ' + idx + ' จาก ' + total + ' ใบ';
+  pushLive(idx >= total);
+}
+
+/* ส่งยอดสะสมให้จอแสดงผลสด (live.html) ดึงไปโชว์แบบเรียลไทม์ ยิงแบบไม่รอผล */
+function pushLive(done) {
+  API.call('pushCount', { tally: tally, counted: idx, total: total, done: done === true }, function () {}, function () {});
 }
 
 /* ================= โหมดยืนยันทีละใบ ================= */
@@ -357,6 +363,7 @@ function speakSummary() {
 
 function finish() {
   stopAuto();
+  pushLive(true);
   document.getElementById('confirmRow').style.display = 'none';
   document.getElementById('autoRow').style.display = 'none';
   document.getElementById('progress').textContent = 'นับครบทั้ง ' + total + ' ใบแล้ว';
