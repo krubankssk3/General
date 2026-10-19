@@ -115,7 +115,7 @@
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 /* ชื่อสำรองเมื่อข้อมูลไม่มีชื่อพรรค — เก็บเฉพาะบัตรเสีย ที่เหลือปล่อยเป็น "หมายเลข N" กันโชว์ชื่อ demo ผิด */
-var PARTY_FALLBACK = { '0': 'บัตรเสีย', 'none': 'ไม่ประสงค์ลงคะแนน' };
+var PARTY_FALLBACK = { 'none': 'ไม่ประสงค์ลงคะแนน' };
 var CAND = {};
 var STAT_YEAR = '';
 
@@ -169,8 +169,8 @@ function loadResults() {
     var cnos = [];
     for (var kk in CAND) { if (CAND.hasOwnProperty(kk)) { cnos.push(String(kk)); } }
     cnos.sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
-    var order = cnos.concat(['none', '0']);
-    function isSpecial(c) { return c === '0' || c === 'none'; }
+    var order = cnos.concat(['none']);
+    function isSpecial(c) { return c === 'none'; }
 
     var max = 1, winNo = null, winVal = -1;
     for (var k = 0; k < order.length; k++) {
@@ -186,7 +186,7 @@ function loadResults() {
       var sc = data.tally[c] || 0;
       var party = (CAND[c] && CAND[c].party) || PARTY_FALLBACK[c] || ('หมายเลข ' + c);
       var pct = data.total > 0 ? Math.round(sc / data.total * 100) : 0;
-      var phText = c === '0' ? '—' : (c === 'none' ? '✓' : esc(c));
+      var phText = c === 'none' ? '✓' : esc(c);
       var thumb = (CAND[c] && CAND[c].photoUrl)
         ? '<img class="res-thumb" src="' + esc(CAND[c].photoUrl) + '" alt="">'
         : '<div class="res-thumb ph">' + phText + '</div>';
