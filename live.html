@@ -67,11 +67,15 @@
 
 <div class="top">
   <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียนบ้านละลม">
-  <div>
-    <h1>เลือกตั้งสภานักเรียน ปีการศึกษา 2569</h1>
-    <div class="sub">โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  <div style="flex:1;min-width:0">
+    <h1 id="liveTitle">เลือกตั้งสภานักเรียน</h1>
+    <div class="sub" id="liveSub">โรงเรียนบ้านละลม</div>
+    <div class="sub" id="liveVenue" style="color:#A594F0;margin-top:2px"></div>
   </div>
-  <div class="liveflag"><i></i> ถ่ายทอดสด · ปิดหีบใน <b class="mono" id="cd">--:--:--</b></div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+    <div class="liveflag"><i></i> ถ่ายทอดสด · <span id="cdLabel">ปิดหีบใน</span> <b class="mono" id="cd">--:--:--</b></div>
+    <select id="unitSel" style="display:none;font-family:'Bai Jamjuree',sans-serif;font-size:.8rem;padding:6px 10px;border-radius:5px;background:rgba(255,255,255,.08);color:#EAE7F5;border:1px solid rgba(255,255,255,.2)"></select>
+  </div>
 </div>
 
 <div class="board">
@@ -79,7 +83,7 @@
   <div class="hero reveal">
     <div>
       <div class="kicker">ผู้มาใช้สิทธิ์ขณะนี้</div>
-      <div class="huge"><span id="big">0</span><em> / 412 คน</em></div>
+      <div class="huge"><span id="big">0</span><em> / <span id="totalN">0</span> คน</em></div>
       <p style="color:#B9B1D8;margin-top:12px">ตัวเลขปรับทุก 5 วินาที ระหว่างเปิดหีบจอนี้แสดงเฉพาะจำนวนผู้มาใช้สิทธิ์</p>
     </div>
     <div class="ring">
@@ -123,7 +127,7 @@
 
 </div>
 
-<div class="ticker"><span>ปิดหีบเวลา 14.30 น. · นักเรียนที่ยังไม่ได้ใช้สิทธิ์ให้มาที่อาคารอเนกประสงค์ · นำบัตรประจำตัวนักเรียนมาด้วยทุกครั้ง · ประกาศผลอย่างเป็นทางการเวลา 15.00 น. หน้าเสาธง · พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ครูโรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</span></div>
+<div class="ticker"><span id="tickerText">กำลังโหลดประกาศ…</span></div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script src="config.js"></script>
@@ -200,6 +204,7 @@ function renderClasses(byGrade) {
 
 function paintTurnout() {
   var pct = TOTAL > 0 ? Math.round(voted / TOTAL * 100) : 0;
+  document.getElementById('totalN').textContent = fmt(TOTAL);
   document.getElementById('pc').textContent = pct;
   document.getElementById('arc').style.strokeDashoffset = String(arcMax - arcMax * pct / 100);
   var big = document.getElementById('big');
@@ -224,13 +229,98 @@ function pull() {
 pull();
 setInterval(pull, 5000);
 
-/* นับถอยหลัง — ของจริงอ่าน closeAt จาก Config ตอนนี้ยังไม่ได้ต่อ ใช้ประมาณไปก่อน */
-var end = new Date().getTime() + (2 * 3600 + 41 * 60) * 1000;
+/* ================= ตั้งค่าหัวจอ/นับถอยหลัง/ประกาศ + หน่วยเลือกตั้ง ================= */
+
+function qsParam(name) {
+  var m = new RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+  return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+}
+
+var CLOSE_AT = 0;       /* เวลาปิดหีบ (ms) 0 = ไม่กำหนด */
+var CUR_UNIT = qsParam('unit');
+
+function applySettings(s) {
+  var yr = s.academicYear ? ' ปีการศึกษา ' + s.academicYear : '';
+  document.getElementById('liveTitle').textContent = 'เลือกตั้งสภานักเรียน' + yr;
+  document.getElementById('liveSub').textContent =
+    (s.schoolName || '') + (s.areaName ? ' ' + s.areaName : '');
+
+  /* ข้อความวิ่งด้านล่าง: ใช้ที่ครูตั้งไว้ ถ้าไม่ตั้งประกอบจากเวลา/สถานที่ให้ */
+  var tick = (s.announce || '').trim();
+  if (!tick) {
+    var parts = [];
+    if (s.closeTime) { parts.push('ปิดหีบเวลา ' + s.closeTime); }
+    if (s.venueName) { parts.push('นักเรียนที่ยังไม่ได้ใช้สิทธิ์ให้มาที่ ' + s.venueName); }
+    if (s.resultTime) { parts.push('ประกาศผลอย่างเป็นทางการเวลา ' + s.resultTime); }
+    parts.push('นำบัตรประจำตัวนักเรียนมาด้วยทุกครั้ง');
+    tick = parts.join(' · ');
+  }
+  document.getElementById('tickerText').textContent = tick;
+
+  /* เวลาปิดหีบสำหรับนับถอยหลัง */
+  CLOSE_AT = s.closeAt ? new Date(s.closeAt).getTime() : 0;
+}
+
+function loadSettings() {
+  API.call('getSettings', {}, function (s) { applySettings(s); }, function () {});
+}
+loadSettings();
+setInterval(loadSettings, 30000);
+
+/* นับถอยหลังจากเวลาปิดหีบจริง (closeAt) ถ้าไม่ตั้งไว้ให้ซ่อน */
 setInterval(function () {
-  var s = Math.floor(Math.max(0, end - new Date().getTime()) / 1000);
-  document.getElementById('cd').textContent =
-    pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
+  var cd = document.getElementById('cd');
+  var lab = document.getElementById('cdLabel');
+  if (!CLOSE_AT) { cd.textContent = '—:—'; lab.textContent = 'เปิดหีบอยู่'; return; }
+  var diff = CLOSE_AT - new Date().getTime();
+  if (diff <= 0) { cd.textContent = '00:00:00'; lab.textContent = 'ถึงเวลาปิดหีบ'; return; }
+  var s = Math.floor(diff / 1000);
+  lab.textContent = 'ปิดหีบใน';
+  cd.textContent = pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
 }, 1000);
+
+/* เลือกหน่วยเลือกตั้งที่จะแสดงบนจอนี้ (คะแนนรวมเหมือนกันทุกหน่วย ต่างกันที่ป้ายหัวจอ) */
+function loadUnits() {
+  API.call('listUnits', {}, function (data) {
+    var units = (data && data.units) ? data.units : [];
+    var sel = document.getElementById('unitSel');
+    var venue = document.getElementById('liveVenue');
+    if (!units.length) { sel.style.display = 'none'; venue.textContent = ''; return; }
+
+    var html = '<option value="">ทุกหน่วย (ภาพรวม)</option>';
+    for (var i = 0; i < units.length; i++) {
+      html += '<option value="' + esc(units[i].unitId) + '">' + esc(units[i].unitName) +
+        (units[i].location ? ' — ' + esc(units[i].location) : '') + '</option>';
+    }
+    sel.innerHTML = html;
+    sel.value = CUR_UNIT;
+    sel.style.display = '';
+    paintVenue(units);
+
+    sel.onchange = function () {
+      CUR_UNIT = this.value;
+      paintVenue(units);
+      /* อัปเดต URL ให้ค้างหน่วยที่เลือกไว้ (เปิดลิงก์ค้างหน่วยได้ เช่น ?unit=U1) */
+      try {
+        var u = CUR_UNIT ? (window.location.pathname + '?unit=' + encodeURIComponent(CUR_UNIT)) : window.location.pathname;
+        window.history.replaceState(null, '', u);
+      } catch (e) {}
+    };
+  }, function () {});
+}
+
+function paintVenue(units) {
+  var venue = document.getElementById('liveVenue');
+  if (!CUR_UNIT) { venue.textContent = ''; return; }
+  for (var i = 0; i < units.length; i++) {
+    if (units[i].unitId === CUR_UNIT) {
+      venue.textContent = '📍 ' + units[i].unitName + (units[i].location ? ' · ' + units[i].location : '');
+      return;
+    }
+  }
+  venue.textContent = '';
+}
+loadUnits();
 
 /* ================= โปสเตอร์ผู้สมัคร + คะแนนสด ================= */
 
