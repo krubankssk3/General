@@ -137,6 +137,42 @@
   </section>
 
   <section>
+    <span class="eyebrow reveal">ตั้งค่าการเลือกตั้ง</span>
+    <h2 class="reveal">ข้อความ เวลา และสถานที่ (ปรับได้อิสระ)</h2>
+    <p class="lead reveal">ค่าที่ตั้งตรงนี้จะไปแสดงบนจอแสดงผล เช่น ข้อความวิ่งด้านล่าง เวลาปิดหีบ และนับถอยหลัง</p>
+    <div class="card reveal" style="margin-top:18px">
+      <div class="grid g2">
+        <div class="field"><label>ชื่อสถานที่/หัวจอ (ไม่บังคับ)</label><input id="setVenue" type="text" placeholder="เช่น อาคารอเนกประสงค์"></div>
+        <div class="field"><label>วันเวลาปิดหีบ (ใช้นับถอยหลังบนจอ)</label><input id="setCloseAt" type="datetime-local"></div>
+        <div class="field"><label>ข้อความเวลาปิดหีบ</label><input id="setCloseTime" type="text" placeholder="เช่น 14.30 น."></div>
+        <div class="field"><label>ข้อความเวลาประกาศผล</label><input id="setResultTime" type="text" placeholder="เช่น 15.00 น. หน้าเสาธง"></div>
+      </div>
+      <div class="field"><label>ข้อความประกาศวิ่งบนจอ (เว้นว่าง = ระบบประกอบจากเวลา/สถานที่ให้)</label>
+        <textarea id="setAnnounce" rows="2" style="width:100%;font-family:'IBM Plex Sans Thai',sans-serif;font-size:1rem;padding:12px 14px;border:1px solid var(--rule);border-radius:4px;background:var(--card);color:var(--ink)" placeholder="พิมพ์ข้อความที่อยากให้วิ่งบนจอแสดงผล…"></textarea></div>
+      <button class="btn primary" id="setSave">บันทึกการตั้งค่า</button>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow reveal">หน่วยเลือกตั้ง / จอแสดงผล</span>
+    <h2 class="reveal">จัดการหน่วยเลือกตั้ง</h2>
+    <p class="lead reveal">สร้างได้หลายหน่วย แต่ละหน่วยมีลิงก์จอแสดงผลของตัวเอง เปิดลิงก์ไปฉายที่จุดไหนก็ได้ คะแนนรวมเหมือนกันทุกหน่วย ต่างกันที่ป้ายหัวจอ</p>
+    <div id="unitList" class="grid g2" style="margin-top:18px"></div>
+    <div class="card reveal" style="margin-top:18px">
+      <h3 style="margin-bottom:14px" id="unitFormTitle">เพิ่มหน่วยใหม่</h3>
+      <div class="grid g2">
+        <div class="field"><label>ชื่อหน่วย</label><input id="uName" type="text" placeholder="เช่น หน่วยเลือกตั้งที่ 1"></div>
+        <div class="field"><label>สถานที่</label><input id="uLoc" type="text" placeholder="เช่น อาคารอเนกประสงค์"></div>
+      </div>
+      <input id="uId" type="hidden">
+      <div style="display:flex;gap:12px">
+        <button class="btn primary" id="uSave">บันทึกหน่วย</button>
+        <button class="btn ghost" id="uClear">ล้างฟอร์ม</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <span class="eyebrow reveal">ผู้มีสิทธิ์เลือกตั้ง</span>
     <h2 class="reveal">จัดการรายชื่อผู้มีสิทธิ์</h2>
     <p class="lead reveal">เพิ่มทีละคน นำเข้าไฟล์ Excel และแก้ไข/ลบรายชื่อ ย้ายไปอยู่ที่เมนู "ผู้มีสิทธิ์" ด้านซ้ายแล้ว</p>
@@ -1241,6 +1277,108 @@ document.getElementById('clearAll').onclick = function () {
     });
   });
 };
+
+/* ================= ตั้งค่าการเลือกตั้ง + หน่วยเลือกตั้ง ================= */
+
+function loadSettings() {
+  API.call('getSettings', {}, function (s) {
+    document.getElementById('setVenue').value = s.venueName || '';
+    document.getElementById('setCloseTime').value = s.closeTime || '';
+    document.getElementById('setResultTime').value = s.resultTime || '';
+    document.getElementById('setAnnounce').value = s.announce || '';
+    document.getElementById('setCloseAt').value = String(s.closeAt || '').slice(0, 16);
+  }, function () {});
+}
+loadSettings();
+
+document.getElementById('setSave').onclick = function () {
+  var btn = this;
+  if (!lockBtn(btn, 'กำลังบันทึก…')) { return; }
+  var payload = {
+    venueName: document.getElementById('setVenue').value.trim(),
+    closeTime: document.getElementById('setCloseTime').value.trim(),
+    resultTime: document.getElementById('setResultTime').value.trim(),
+    announce: document.getElementById('setAnnounce').value.trim(),
+    closeAt: document.getElementById('setCloseAt').value
+  };
+  API.call('saveSettings', payload, function () {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าแล้ว', text: 'จอแสดงผลจะอัปเดตภายใน 30 วินาที', timer: 1800, showConfirmButton: false });
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+function loadUnits() {
+  API.call('listUnits', {}, function (data) {
+    var box = document.getElementById('unitList');
+    var units = (data && data.units) ? data.units : [];
+    if (!units.length) { box.innerHTML = '<p class="muted">ยังไม่มีหน่วยเลือกตั้ง เพิ่มด้านล่างได้เลย</p>'; return; }
+    var base = location.href.replace(/admin\.html.*$/, 'live.html');
+    var html = '';
+    for (var i = 0; i < units.length; i++) {
+      var u = units[i];
+      var link = base + '?unit=' + encodeURIComponent(u.unitId);
+      html += '<div class="card"><h3>' + esc(u.unitName) + '</h3>' +
+        '<div class="muted" style="margin-bottom:8px">' + esc(u.location || '—') + '</div>' +
+        '<div class="mono" style="font-size:.74rem;word-break:break-all;color:var(--ink-faint);margin-bottom:10px">' + esc(link) + '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<a class="btn sm ghost" href="' + esc(link) + '" target="_blank" rel="noopener">เปิดจอหน่วยนี้</a>' +
+        '<button class="btn sm ghost" data-ue=\'' + encodeURIComponent(JSON.stringify(u)) + '\'>แก้</button>' +
+        '<button class="btn sm ghost" data-ud="' + esc(u.unitId) + '">ลบ</button></div></div>';
+    }
+    box.innerHTML = html;
+    var es = box.querySelectorAll('[data-ue]');
+    for (var e = 0; e < es.length; e++) { es[e].onclick = function () { fillUnitForm(JSON.parse(decodeURIComponent(this.getAttribute('data-ue')))); }; }
+    var ds = box.querySelectorAll('[data-ud]');
+    for (var d = 0; d < ds.length; d++) { ds[d].onclick = function () { delUnit(this.getAttribute('data-ud')); }; }
+  }, function () {});
+}
+loadUnits();
+
+function fillUnitForm(u) {
+  document.getElementById('uId').value = u.unitId;
+  document.getElementById('uName').value = u.unitName;
+  document.getElementById('uLoc').value = u.location;
+  document.getElementById('unitFormTitle').textContent = 'แก้ไขหน่วย ' + u.unitName;
+  document.getElementById('uName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function clearUnitForm() {
+  document.getElementById('uId').value = '';
+  document.getElementById('uName').value = '';
+  document.getElementById('uLoc').value = '';
+  document.getElementById('unitFormTitle').textContent = 'เพิ่มหน่วยใหม่';
+}
+document.getElementById('uClear').onclick = clearUnitForm;
+
+document.getElementById('uSave').onclick = function () {
+  var btn = this;
+  var payload = {
+    unitId: document.getElementById('uId').value.trim(),
+    unitName: document.getElementById('uName').value.trim(),
+    location: document.getElementById('uLoc').value.trim()
+  };
+  if (!payload.unitName) { Swal.fire({ icon: 'warning', title: 'กรอกชื่อหน่วย', confirmButtonText: 'ปิด' }); return; }
+  if (!lockBtn(btn, 'กำลังบันทึก…')) { return; }
+  API.call('saveUnit', payload, function () {
+    unlockBtn(btn); clearUnitForm(); loadUnits();
+    Swal.fire({ icon: 'success', title: 'บันทึกหน่วยแล้ว', timer: 1400, showConfirmButton: false });
+  }, function (msg) {
+    unlockBtn(btn);
+    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+};
+
+function delUnit(id) {
+  Swal.fire({ icon: 'warning', title: 'ลบหน่วยนี้?', showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', reverseButtons: true }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    API.call('deleteUnit', { unitId: id }, function () {
+      loadUnits();
+      Swal.fire({ icon: 'success', title: 'ลบแล้ว', timer: 1200, showConfirmButton: false });
+    }, function (msg) { Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' }); });
+  });
+}
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
