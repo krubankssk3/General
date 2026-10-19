@@ -150,20 +150,41 @@
     <div id="candList" class="grid g2" style="margin-top:20px"></div>
 
     <div class="card reveal" style="margin-top:18px">
-      <h3 style="margin-bottom:14px" id="candFormTitle">เพิ่มผู้สมัครใหม่</h3>
-      <div class="grid g2">
-        <div class="field"><label>หมายเลข (1-9)</label><input id="cNo" type="number" min="1" max="9" placeholder="1"></div>
-        <div class="field"><label>ชื่อพรรค</label><input id="cParty" type="text" placeholder="ละลมก้าวหน้า"></div>
-        <div class="field"><label>หัวหน้าทีม</label><input id="cLeader" type="text" placeholder="ปาลิตา สุขประเสริฐ"></div>
-        <div class="field"><label>ห้องหัวหน้าทีม</label><input id="cRoom" type="text" placeholder="ม.3/1"></div>
+      <h3 style="margin-bottom:16px" id="candFormTitle">เพิ่มผู้สมัครใหม่</h3>
+
+      <div class="cand-form">
+        <div class="poster-col">
+          <label>รูปโปสเตอร์ผู้สมัคร</label>
+          <div class="poster-drop" id="posterDrop">
+            <img id="posterImg" alt="" style="display:none">
+            <div class="poster-ph" id="posterPh">
+              <i class="pi"></i>
+              <span>ยังไม่มีรูป</span>
+              <small>รูปสี่เหลี่ยมจัตุรัสจะสวยที่สุด</small>
+            </div>
+          </div>
+          <input type="file" id="cPhotoFile" accept="image/png,image/jpeg,image/webp" style="display:none">
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn sm ghost" id="posterUpBtn" style="flex:1">อัปโหลดไฟล์</button>
+            <button class="btn sm ghost" id="posterLinkBtn" style="flex:1">วางลิงก์</button>
+          </div>
+          <input id="cPhoto" type="hidden">
+        </div>
+
+        <div class="fields-col">
+          <div class="grid g2">
+            <div class="field"><label>หมายเลข (1-9)</label><input id="cNo" type="number" min="1" max="9" placeholder="1"></div>
+            <div class="field"><label>ชื่อพรรค</label><input id="cParty" type="text" placeholder="ละลมก้าวหน้า"></div>
+            <div class="field"><label>หัวหน้าทีม</label><input id="cLeader" type="text" placeholder="ปาลิตา สุขประเสริฐ"></div>
+            <div class="field"><label>ห้องหัวหน้าทีม</label><input id="cRoom" type="text" placeholder="ม.3/1"></div>
+          </div>
+          <div class="field"><label>สมาชิกทีม</label><input id="cMembers" type="text" placeholder="สมาชิกทีม 8 คน"></div>
+          <div class="field"><label>นโยบาย</label><input id="cPolicy" type="text" placeholder="ขยายเวลาห้องสมุด ตั้งชมรม..."></div>
+          <div class="field"><label>ลิงก์คลิปแนะนำ (ถ้ามี)</label><input id="cClip" type="url" placeholder="https://..."></div>
+        </div>
       </div>
-      <div class="field"><label>สมาชิกทีม</label><input id="cMembers" type="text" placeholder="สมาชิกทีม 8 คน"></div>
-      <div class="field"><label>นโยบาย</label><input id="cPolicy" type="text" placeholder="ขยายเวลาห้องสมุด ตั้งชมรม..."></div>
-      <div class="grid g2">
-        <div class="field"><label>ลิงก์รูปทีม (ถ้ามี)</label><input id="cPhoto" type="url" placeholder="https://..."></div>
-        <div class="field"><label>ลิงก์คลิปแนะนำ (ถ้ามี)</label><input id="cClip" type="url" placeholder="https://..."></div>
-      </div>
-      <div style="display:flex;gap:12px;margin-top:6px">
+
+      <div style="display:flex;gap:12px;margin-top:16px">
         <button class="btn primary" id="cSave">บันทึกผู้สมัคร</button>
         <button class="btn ghost" id="cClear">ล้างฟอร์ม</button>
       </div>
@@ -188,6 +209,24 @@
         <h3>แจ้งผลผ่าน LINE</h3>
         <p class="muted" style="margin-bottom:14px">ส่งประกาศผลไปยังผู้ติดตาม LINE OA ของโรงเรียน ทำได้หลังประกาศผลแล้ว</p>
         <button class="btn wide ghost" id="notifyLine">ส่งเข้า LINE</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow reveal">ข้อมูลทดสอบ</span>
+    <h2 class="reveal">ข้อมูลจำลองสำหรับซ้อมระบบ</h2>
+    <p class="lead reveal">ใช้ตอนซ้อมก่อนวันจริง ใส่ข้อมูลปลอมเข้าไปทดลองทั้งวงจร แล้วล้างออกก่อนเริ่มใช้งานจริง</p>
+    <div class="grid g2" style="margin-top:20px" id="demoTools">
+      <div class="card reveal">
+        <h3>ใส่ข้อมูลจำลอง</h3>
+        <p class="muted" style="margin-bottom:14px">สร้างนักเรียนปลอม 412 คน ผู้สมัคร 3 ทีม บัตร 268 ใบ และบัญชีทดสอบ เพื่อทดลองระบบ</p>
+        <button class="btn wide ghost" id="seedDemo">ใส่ข้อมูลจำลอง</button>
+      </div>
+      <div class="card reveal" style="border-color:var(--border-danger, #E5B4BE)">
+        <h3 style="color:var(--stamp)">ล้างข้อมูลจำลอง</h3>
+        <p class="muted" style="margin-bottom:14px">ลบข้อมูลทุกชีตให้เหลือหัวคอลัมน์ ทำก่อนใส่ข้อมูลจริง เรียกคืนไม่ได้</p>
+        <button class="btn wide danger" id="clearDemo">ล้างข้อมูลทั้งหมด</button>
       </div>
     </div>
   </section>
@@ -387,13 +426,16 @@ function loadCandidates() {
     var html = '';
     for (var i = 0; i < data.candidates.length; i++) {
       var c = data.candidates[i];
-      html += '<div class="card"><div style="display:flex;gap:14px;align-items:center;margin-bottom:10px">' +
-        '<div class="no" style="width:52px;flex:none">' + esc(c.no) + '</div>' +
-        '<div><h3>' + esc(c.party) + '</h3><div class="muted">' + esc(c.leader) + ' ' + esc(c.leaderRoom) + '</div></div></div>' +
-        '<p class="muted" style="margin-bottom:12px">' + esc(c.policy) + '</p>' +
+      var poster = c.photoUrl
+        ? '<div class="cand-poster"><img src="' + esc(c.photoUrl) + '" alt="โปสเตอร์เบอร์ ' + esc(c.no) + '" loading="lazy"><span class="cand-badge">' + esc(c.no) + '</span></div>'
+        : '<div class="cand-poster empty"><span class="cand-badge">' + esc(c.no) + '</span><span class="no-img">ยังไม่มีรูป</span></div>';
+      html += '<div class="card cand-card">' + poster +
+        '<div class="cand-body"><h3>' + esc(c.party) + '</h3>' +
+        '<div class="muted">' + esc(c.leader) + ' ' + esc(c.leaderRoom) + '</div>' +
+        '<p class="muted" style="margin:10px 0 12px">' + esc(c.policy) + '</p>' +
         '<div style="display:flex;gap:8px">' +
         '<button class="btn sm ghost" data-edit=\'' + encodeURIComponent(JSON.stringify(c)) + '\'>แก้ไข</button>' +
-        '<button class="btn sm ghost" data-del="' + esc(c.no) + '">ลบ</button></div></div>';
+        '<button class="btn sm ghost" data-del="' + esc(c.no) + '">ลบ</button></div></div></div>';
     }
     box.innerHTML = html;
 
@@ -417,6 +459,7 @@ function fillCandForm(c) {
   document.getElementById('cPolicy').value = c.policy;
   document.getElementById('cPhoto').value = c.photoUrl;
   document.getElementById('cClip').value = c.clipUrl;
+  setPoster(c.photoUrl);
   document.getElementById('candFormTitle').textContent = 'แก้ไขผู้สมัครเบอร์ ' + c.no;
   document.getElementById('cNo').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -425,8 +468,69 @@ function clearCandForm() {
   ['cNo', 'cParty', 'cLeader', 'cRoom', 'cMembers', 'cPolicy', 'cPhoto', 'cClip'].forEach(function (id) {
     document.getElementById(id).value = '';
   });
+  setPoster('');
   document.getElementById('candFormTitle').textContent = 'เพิ่มผู้สมัครใหม่';
 }
+
+/* ---- รูปโปสเตอร์ผู้สมัคร ---- */
+function setPoster(url) {
+  var img = document.getElementById('posterImg');
+  var ph = document.getElementById('posterPh');
+  document.getElementById('cPhoto').value = url || '';
+  if (url) { img.src = url; img.style.display = 'block'; ph.style.display = 'none'; }
+  else { img.removeAttribute('src'); img.style.display = 'none'; ph.style.display = 'flex'; }
+}
+
+document.getElementById('posterUpBtn').onclick = function () {
+  document.getElementById('cPhotoFile').click();
+};
+
+document.getElementById('cPhotoFile').onchange = function () {
+  var file = this.files && this.files[0];
+  if (!file) { return; }
+  if (['image/png', 'image/jpeg', 'image/webp'].indexOf(file.type) < 0) {
+    Swal.fire({ icon: 'error', title: 'ชนิดไฟล์ไม่รองรับ', text: 'รับเฉพาะ PNG JPG WEBP', confirmButtonText: 'ปิด' });
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    Swal.fire({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'ไฟล์ต้องไม่เกิน 5 MB', confirmButtonText: 'ปิด' });
+    return;
+  }
+  setPoster(URL.createObjectURL(file));   /* พรีวิวทันที */
+  var mime = file.type, fname = file.name;
+  fileToBase64(file, function (b64) {
+    showLoading('กำลังอัปโหลดรูป', 'เก็บลงไดรฟ์โฟลเดอร์ Candidates');
+    API.call('uploadPhoto', { base64: b64, mimeType: mime, fileName: fname }, function (res) {
+      setPoster(res.url);
+      Swal.fire({ icon: 'success', title: 'อัปโหลดรูปแล้ว', timer: 1400, showConfirmButton: false });
+    }, function (msg) {
+      setPoster('');
+      Swal.fire({ icon: 'error', title: 'อัปโหลดไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  }, function (m) { setPoster(''); toastError(m); });
+  this.value = '';
+};
+
+document.getElementById('posterLinkBtn').onclick = function () {
+  Swal.fire({
+    title: 'วางลิงก์รูปโปสเตอร์',
+    input: 'url',
+    inputValue: document.getElementById('cPhoto').value,
+    inputPlaceholder: 'https://.../poster.jpg',
+    html: '<span class="mono" style="color:#8B849F">ต้องเป็นลิงก์ที่เปิดแล้วเห็นรูปโดยตรง</span>',
+    showCancelButton: true,
+    confirmButtonText: 'ใช้ลิงก์นี้',
+    cancelButtonText: 'ยกเลิก'
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    var v = String(r.value || '').trim();
+    if (v && !/^https:\/\//.test(v)) {
+      Swal.fire({ icon: 'warning', title: 'ลิงก์ไม่ถูกต้อง', text: 'ต้องขึ้นต้นด้วย https://', confirmButtonText: 'ปิด' });
+      return;
+    }
+    setPoster(v);
+  });
+};
 
 document.getElementById('cClear').onclick = clearCandForm;
 
@@ -536,6 +640,57 @@ document.getElementById('notifyLine').onclick = function () {
     }, function (msg) {
       unlockBtn(btn);
       Swal.fire({ icon: 'error', title: 'ส่งไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  });
+};
+
+/* ================= ข้อมูลจำลอง ================= */
+
+document.getElementById('seedDemo').onclick = function () {
+  var btn = this;
+  Swal.fire({
+    icon: 'question',
+    title: 'ใส่ข้อมูลจำลอง?',
+    html: 'จะสร้างนักเรียนปลอม 412 คน ผู้สมัคร 3 ทีม และบัตร 268 ใบ<br><span class="mono" style="color:#8B849F">ทับข้อมูลเดิมที่มีอยู่ ใช้สำหรับซ้อมเท่านั้น</span>',
+    showCancelButton: true, confirmButtonText: 'ใส่เลย', cancelButtonText: 'ยกเลิก', reverseButtons: true
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    if (!lockBtn(btn, 'กำลังสร้าง…')) { return; }
+    showLoading('กำลังใส่ข้อมูลจำลอง', 'สร้างนักเรียน บัตร และผู้สมัคร');
+    API.call('seedDemo', {}, function () {
+      unlockBtn(btn);
+      loadCandidates();
+      loadStats();
+      Swal.fire({ icon: 'success', title: 'ใส่ข้อมูลจำลองแล้ว', html: 'ระบบพร้อมให้ซ้อมทั้งวงจร', confirmButtonText: 'ปิด' });
+    }, function (msg) {
+      unlockBtn(btn);
+      Swal.fire({ icon: 'error', title: 'ไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  });
+};
+
+document.getElementById('clearDemo').onclick = function () {
+  var btn = this;
+  Swal.fire({
+    icon: 'warning',
+    title: 'ล้างข้อมูลทั้งหมด?',
+    html: 'ลบนักเรียน บัตร ผู้สมัคร และบัญชีทั้งหมด เหลือแต่หัวคอลัมน์<br><b style="color:var(--stamp)">เรียกคืนไม่ได้</b><br><br>พิมพ์คำว่า <b>ล้าง</b> เพื่อยืนยัน',
+    input: 'text',
+    inputPlaceholder: 'พิมพ์ ล้าง',
+    showCancelButton: true, confirmButtonText: 'ล้างเดี๋ยวนี้', cancelButtonText: 'ยกเลิก', reverseButtons: true,
+    preConfirm: function (v) { if (v !== 'ล้าง') { Swal.showValidationMessage('พิมพ์ให้ตรงคำว่า ล้าง'); } return v; }
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    if (!lockBtn(btn, 'กำลังล้าง…')) { return; }
+    showLoading('กำลังล้างข้อมูล');
+    API.call('clearDemo', {}, function () {
+      unlockBtn(btn);
+      loadCandidates();
+      loadStats();
+      Swal.fire({ icon: 'success', title: 'ล้างข้อมูลแล้ว', html: 'ระบบพร้อมรับข้อมูลจริง', confirmButtonText: 'ปิด' });
+    }, function (msg) {
+      unlockBtn(btn);
+      Swal.fire({ icon: 'error', title: 'ล้างไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
     });
   });
 };
