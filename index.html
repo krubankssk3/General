@@ -46,34 +46,7 @@
     <span class="eyebrow reveal">ผู้สมัคร</span>
     <h2 class="reveal">สามทีมที่ลงสมัครปีนี้</h2>
     <div class="grid g3" style="margin-top:24px" id="cands">
-
-      <div class="card reveal">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-          <div class="no" style="width:62px">1</div>
-          <div><h3>ละลมก้าวหน้า</h3><div class="muted">หัวหน้าทีม ปาลิตา (ม.3/1)</div></div>
-        </div>
-        <p class="lead" style="font-size:.9rem">ขยายเวลาห้องสมุดถึง 16.30 น. ตั้งชมรมซ่อมจักรยาน และทำตู้ยืมอุปกรณ์กีฬาแบบไม่ต้องเซ็นชื่อ</p>
-        <p class="mono" style="margin-top:12px;color:var(--ink-faint)">สมาชิกทีม 8 คน</p>
-      </div>
-
-      <div class="card reveal">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-          <div class="no" style="width:62px">2</div>
-          <div><h3>รวมใจบ้านละลม</h3><div class="muted">หัวหน้าทีม ธนกฤต (ม.2/2)</div></div>
-        </div>
-        <p class="lead" style="font-size:.9rem">ปรับเมนูอาหารกลางวันตามผลโหวตรายเดือน จัดเวรทำความสะอาดใหม่ให้เท่ากันทุกชั้น และเปิดกล่องรับเรื่องร้องเรียนออนไลน์</p>
-        <p class="mono" style="margin-top:12px;color:var(--ink-faint)">สมาชิกทีม 8 คน</p>
-      </div>
-
-      <div class="card reveal">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-          <div class="no" style="width:62px">3</div>
-          <div><h3>เพื่อนพัฒนา</h3><div class="muted">หัวหน้าทีม ณิชาภัทร (ม.3/2)</div></div>
-        </div>
-        <p class="lead" style="font-size:.9rem">ตั้งพี่เลี้ยงประจำชั้นให้น้อง ป.1–ป.3 จัดตลาดนัดของมือสองเทอมละครั้ง และทำป้ายบอกทางในโรงเรียนใหม่ทั้งหมด</p>
-        <p class="mono" style="margin-top:12px;color:var(--ink-faint)">สมาชิกทีม 8 คน</p>
-      </div>
-
+      <p class="muted" id="candsLoading">กำลังโหลดรายชื่อผู้สมัคร…</p>
     </div>
     <p class="muted reveal" style="margin-top:18px">กดที่การ์ดเพื่อดูนโยบายฉบับเต็มและคลิปแนะนำทีม</p>
   </section>
@@ -85,7 +58,7 @@
       <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 1</div><h3 style="margin-top:6px">ยื่นบัตรนักเรียน</h3><p class="muted">กรรมการหน่วยสแกนคิวอาร์หลังบัตร ระบบตรวจว่ามีชื่อในทะเบียนและยังไม่ได้ใช้สิทธิ์</p></div>
       <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 2</div><h3 style="margin-top:6px">ยืนยันใบหน้า</h3><p class="muted">มองกล้องสองวินาที ระบบเทียบกับภาพในทะเบียน ภาพที่ถ่ายจะถูกลบทันทีหลังตรวจเสร็จ</p></div>
       <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 3</div><h3 style="margin-top:6px">รับสิทธิ์เข้าคูหา</h3><p class="muted">ระบบออกรหัสเข้าคูหาอายุ 3 นาที ใช้ได้ครั้งเดียว หมดเวลาต้องกลับมายื่นบัตรใหม่</p></div>
-      <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 4</div><h3 style="margin-top:6px">กาบัตร</h3><p class="muted">เลือกหมายเลขที่ต้องการหรือกดไม่ประสงค์ลงคะแนน ยืนยันแล้วแก้ไม่ได้</p></div>
+      <div class="card reveal"><div class="mono" style="color:var(--violet)">ขั้นที่ 4</div><h3 style="margin-top:6px">กาบัตร</h3><p class="muted">เลือกหมายเลขที่ต้องการหรือกดบัตรเสีย ยืนยันแล้วแก้ไม่ได้</p></div>
     </div>
   </section>
 
@@ -158,19 +131,55 @@ setInterval(function () {
     pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
 }, 1000);
 
-var cards = document.querySelectorAll('#cands .card');
-for (var i = 0; i < cards.length; i++) {
-  cards[i].style.cursor = 'pointer';
-  cards[i].onclick = function () {
-    var no = this.querySelector('.no').textContent;
-    var name = this.querySelector('h3').textContent;
-    Swal.fire({
-      title: 'หมายเลข ' + no + ' — ' + name,
-      html: '<p style="text-align:left">หน้าสาธิตนี้ยังไม่ได้ต่อกับฐานข้อมูล ของจริงจะดึงนโยบายฉบับเต็ม รูปทีม และลิงก์คลิปแนะนำจากชีต Candidates</p>',
-      confirmButtonText: 'ปิด'
-    });
-  };
+/* ---- โหลดผู้สมัครจริงพร้อมรูปโปสเตอร์ ---- */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+var CAND = [];
+function loadCands() {
+  API.call('listCandidates', {}, function (data) {
+    CAND = (data && data.candidates) ? data.candidates : [];
+    var box = document.getElementById('cands');
+    if (!CAND.length) { box.innerHTML = '<p class="muted">ยังไม่มีผู้สมัคร</p>'; return; }
+
+    var html = '';
+    for (var i = 0; i < CAND.length; i++) {
+      var c = CAND[i];
+      var poster = c.photoUrl
+        ? '<div class="cand-poster"><img src="' + esc(c.photoUrl) + '" alt="โปสเตอร์เบอร์ ' + esc(c.no) + '" loading="lazy"><span class="cand-badge">' + esc(c.no) + '</span></div>'
+        : '<div class="cand-poster empty"><span class="cand-badge">' + esc(c.no) + '</span><span class="no-img">หมายเลข ' + esc(c.no) + '</span></div>';
+      html += '<div class="card cand-card reveal" data-i="' + i + '" style="cursor:pointer">' + poster +
+        '<div class="cand-body"><h3>' + esc(c.party) + '</h3>' +
+        '<div class="muted">หัวหน้าทีม ' + esc(c.leader) + ' ' + esc(c.leaderRoom) + '</div></div></div>';
+    }
+    box.innerHTML = html;
+
+    countUp(document.getElementById('s4'), CAND.length);
+    stagger('#cands .reveal', 120);
+    initReveal();
+
+    var cards = box.querySelectorAll('.cand-card');
+    for (var k = 0; k < cards.length; k++) {
+      cards[k].onclick = function () { showCand(CAND[parseInt(this.getAttribute('data-i'), 10)]); };
+    }
+  }, function () {
+    document.getElementById('cands').innerHTML = '<p class="muted">โหลดรายชื่อผู้สมัครไม่ได้ ลองรีเฟรชหน้าอีกครั้ง</p>';
+  });
+}
+
+function showCand(c) {
+  var img = c.photoUrl ? '<img src="' + esc(c.photoUrl) + '" style="width:100%;max-width:280px;border-radius:10px;margin:0 auto 14px;display:block">' : '';
+  var clip = c.clipUrl ? '<br><a href="' + esc(c.clipUrl) + '" target="_blank" rel="noopener">ดูคลิปแนะนำทีม</a>' : '';
+  Swal.fire({
+    title: 'หมายเลข ' + esc(c.no) + ' — ' + esc(c.party),
+    html: img + '<p style="text-align:left"><b>หัวหน้าทีม:</b> ' + esc(c.leader) + ' ' + esc(c.leaderRoom) +
+          '<br><b>สมาชิก:</b> ' + esc(c.members) + '<br><br>' + esc(c.policy) + '</p>' + clip,
+    confirmButtonText: 'ปิด'
+  });
+}
+
+loadCands();
 </script>
 </body>
 </html>
