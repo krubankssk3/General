@@ -97,30 +97,40 @@ stagger('#stats .reveal', 110);
 stagger('#cands .reveal', 130);
 stagger('#steps .reveal', 100);
 
-var VOTED = 268, TOTAL = 412;
+var VOTED = 0, TOTAL = 0;
+var firstFill = true;
 
-var fired = false;
+/* ดึงจำนวนผู้มาใช้สิทธิ์จริงจาก backend อัปเดตทุก 8 วินาที */
 function fillStats() {
-  if (fired) { return; }
-  fired = true;
-  countUp(document.getElementById('s1'), VOTED);
-  countUp(document.getElementById('s2'), TOTAL);
-  countUp(document.getElementById('s4'), 3);
+  API.call('live', {}, function (data) {
+    VOTED = data.voted || 0;
+    TOTAL = data.total || 0;
+    var pct = TOTAL > 0 ? Math.round(VOTED / TOTAL * 100) : 0;
 
-  var pct = Math.round(VOTED / TOTAL * 100);
-  var el = document.getElementById('s3');
-  var n = 0;
-  var t = setInterval(function () {
-    n += 1;
-    if (n >= pct) { n = pct; clearInterval(t); }
-    el.innerHTML = n + '<span style="font-size:1.3rem">%</span>';
-  }, 18);
+    if (firstFill) {
+      firstFill = false;
+      countUp(document.getElementById('s1'), VOTED);
+      countUp(document.getElementById('s2'), TOTAL);
+      var el = document.getElementById('s3');
+      var n = 0;
+      var t = setInterval(function () {
+        n += 1;
+        if (n >= pct) { n = pct; clearInterval(t); }
+        el.innerHTML = n + '<span style="font-size:1.3rem">%</span>';
+      }, 18);
+    } else {
+      document.getElementById('s1').textContent = fmt(VOTED);
+      document.getElementById('s2').textContent = fmt(TOTAL);
+      document.getElementById('s3').innerHTML = pct + '<span style="font-size:1.3rem">%</span>';
+    }
 
-  document.getElementById('bar').style.width = pct + '%';
-  document.getElementById('pct').textContent = pct + '%';
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('pct').textContent = pct + '%';
+  }, function () {});
 }
 
-setTimeout(fillStats, 450);
+setTimeout(fillStats, 300);
+setInterval(fillStats, 8000);
 
 /* นับถอยหลังปิดหีบ — ของจริงต้องอ่านเวลาจากฝั่งเซิร์ฟเวอร์เท่านั้น */
 var end = new Date().getTime() + (2 * 3600 + 41 * 60 + 8) * 1000;
