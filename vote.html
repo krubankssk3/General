@@ -43,23 +43,7 @@
       <div class="ballot reveal" style="margin-top:22px;--d:.16s" id="ballot">
         <div class="ballot-head">บัตรเลือกตั้งสภานักเรียน · เลือกได้หนึ่งหมายเลข</div>
 
-        <div class="row" data-v="1" tabindex="0" role="button">
-          <div class="no">1</div>
-          <div><div class="name">ละลมก้าวหน้า</div><div class="lead2">หัวหน้าทีม ปาลิตา · ม.3/1</div></div>
-          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
-        </div>
-
-        <div class="row" data-v="2" tabindex="0" role="button">
-          <div class="no">2</div>
-          <div><div class="name">รวมใจบ้านละลม</div><div class="lead2">หัวหน้าทีม ธนกฤต · ม.2/2</div></div>
-          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
-        </div>
-
-        <div class="row" data-v="3" tabindex="0" role="button">
-          <div class="no">3</div>
-          <div><div class="name">เพื่อนพัฒนา</div><div class="lead2">หัวหน้าทีม ณิชาภัทร · ม.3/2</div></div>
-          <div class="mark"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg></div>
-        </div>
+        <div id="candRows"><div class="row" style="cursor:default"><div class="no">…</div><div><div class="muted">กำลังโหลดรายชื่อผู้สมัคร…</div></div><div></div></div></div>
 
         <div class="row" data-v="0" tabindex="0" role="button" style="background:var(--paper)">
           <div class="no" style="border-style:dashed;font-size:1.2rem;line-height:2.1">—</div>
@@ -102,13 +86,48 @@ if (!voteToken) {
   }).then(function () { window.location.href = 'booth.html'; });
 } else {
   document.getElementById('tok').textContent = voteToken;
+  loadBallot();
 }
 
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+var MARK = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+  '<path d="M18 20 L82 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/>' +
+  '<path d="M82 20 L18 80" stroke="#D6234A" stroke-width="9" stroke-linecap="round" fill="none"/></svg>';
+
 var pick = null;
-var rows = document.querySelectorAll('.row');
 var submit = document.getElementById('submit');
 
+/* โหลดผู้สมัครจริงมาสร้างแถวบนบัตร (บัตรเสียเป็นแถวสุดท้ายเสมอ) */
+function loadBallot() {
+  API.call('listCandidates', {}, function (data) {
+    var cs = (data && data.candidates) ? data.candidates : [];
+    cs.sort(function (a, b) { return parseInt(a.no, 10) - parseInt(b.no, 10); });
+    var box = document.getElementById('candRows');
+    if (!cs.length) {
+      box.innerHTML = '<div class="row" style="cursor:default"><div class="no">—</div><div><div class="muted">ยังไม่มีผู้สมัครในระบบ</div></div><div></div></div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < cs.length; i++) {
+      var c = cs[i];
+      var sub = 'หัวหน้าทีม ' + (c.leader || '') + (c.leaderRoom ? ' · ' + c.leaderRoom : '');
+      html += '<div class="row" data-v="' + esc(c.no) + '" tabindex="0" role="button">' +
+        '<div class="no">' + esc(c.no) + '</div>' +
+        '<div><div class="name">' + esc(c.party) + '</div><div class="lead2">' + esc(sub) + '</div></div>' +
+        '<div class="mark">' + MARK + '</div></div>';
+    }
+    box.innerHTML = html;
+    bindRows();
+  }, function () {
+    document.getElementById('candRows').innerHTML = '<div class="row" style="cursor:default"><div class="no">!</div><div><div class="muted">โหลดรายชื่อผู้สมัครไม่ได้ ลองรีเฟรชหน้า</div></div><div></div></div>';
+  });
+}
+
 function choose(row) {
+  var rows = document.querySelectorAll('.row');
   for (var i = 0; i < rows.length; i++) { rows[i].classList.remove('picked'); }
   row.classList.add('picked');
   pick = row.getAttribute('data-v');
@@ -116,12 +135,18 @@ function choose(row) {
   submit.textContent = pick === '0' ? 'ยืนยัน — บัตรเสีย' : 'ยืนยัน — เลือกหมายเลข ' + pick;
 }
 
-for (var i = 0; i < rows.length; i++) {
-  rows[i].onclick = function () { choose(this); };
-  rows[i].onkeydown = function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(this); }
-  };
+/* ผูกการกดกับทุกแถวที่เลือกได้ (เรียกใหม่หลังเติมผู้สมัคร) */
+function bindRows() {
+  var rows = document.querySelectorAll('.row[data-v]');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].onclick = function () { choose(this); };
+    rows[i].onkeydown = function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(this); }
+    };
+  }
 }
+/* ผูกแถวบัตรเสียที่มีอยู่แล้วตั้งแต่ต้น */
+bindRows();
 
 submit.onclick = function () {
   var who = pick === '0' ? 'บัตรเสีย'
