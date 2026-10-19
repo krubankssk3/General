@@ -115,7 +115,7 @@
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 /* ชื่อสำรองเมื่อข้อมูลไม่มีชื่อพรรค — เก็บเฉพาะบัตรเสีย ที่เหลือปล่อยเป็น "หมายเลข N" กันโชว์ชื่อ demo ผิด */
-var PARTY_FALLBACK = { '0': 'บัตรเสีย' };
+var PARTY_FALLBACK = { '0': 'บัตรเสีย', 'none': 'ไม่ประสงค์ลงคะแนน' };
 var CAND = {};
 var STAT_YEAR = '';
 
@@ -165,12 +165,20 @@ function loadResults() {
       box.innerHTML = '<div class="empty-note">คะแนนรายเบอร์จะแสดงหลังประกาศผลอย่างเป็นทางการ</div>';
       return;
     }
-    var order = ['1', '2', '3', '0'];
+    /* เรียงตามผู้สมัครจริง แล้วต่อด้วยไม่ประสงค์ลงคะแนน และบัตรเสีย */
+    var cnos = [];
+    for (var kk in CAND) { if (CAND.hasOwnProperty(kk)) { cnos.push(String(kk)); } }
+    cnos.sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
+    var order = cnos.concat(['none', '0']);
+    function isSpecial(c) { return c === '0' || c === 'none'; }
+
     var max = 1, winNo = null, winVal = -1;
     for (var k = 0; k < order.length; k++) {
       var v = data.tally[order[k]] || 0;
-      if (order[k] !== '0' && v > max) { max = v; }
-      if (order[k] !== '0' && v > winVal) { winVal = v; winNo = order[k]; }
+      if (!isSpecial(order[k])) {
+        if (v > max) { max = v; }
+        if (v > winVal) { winVal = v; winNo = order[k]; }
+      }
     }
     var html = '<div class="card">';
     for (var i = 0; i < order.length; i++) {
@@ -178,11 +186,12 @@ function loadResults() {
       var sc = data.tally[c] || 0;
       var party = (CAND[c] && CAND[c].party) || PARTY_FALLBACK[c] || ('หมายเลข ' + c);
       var pct = data.total > 0 ? Math.round(sc / data.total * 100) : 0;
+      var phText = c === '0' ? '—' : (c === 'none' ? '✓' : esc(c));
       var thumb = (CAND[c] && CAND[c].photoUrl)
         ? '<img class="res-thumb" src="' + esc(CAND[c].photoUrl) + '" alt="">'
-        : '<div class="res-thumb ph">' + (c === '0' ? '—' : esc(c)) + '</div>';
+        : '<div class="res-thumb ph">' + phText + '</div>';
       var isWin = (c === winNo && winVal > 0);
-      var w = (c === '0') ? 0 : Math.round(sc / max * 100);
+      var w = isSpecial(c) ? 0 : Math.round(sc / max * 100);
       html += '<div class="res-row' + (isWin ? ' win' : '') + '">' + thumb +
         '<div class="res-mid"><div class="nm">' + esc(party) + (isWin ? '<span class="crown">ผู้ชนะ</span>' : '') + '</div>' +
         '<div class="res-bar"><i data-w="' + w + '"></i></div></div>' +
