@@ -183,6 +183,12 @@ function parseArr(s) {
   try { var v = JSON.parse(s); return (v && v.length) ? v : []; } catch (e) { return []; }
 }
 
+/* ตัวอักษรย่อสำหรับรูปโปรไฟล์ที่ยังไม่มีรูป */
+function initial(s) {
+  s = String(s == null ? '' : s).trim();
+  return s ? s.charAt(0) : '?';
+}
+
 function showCand(c) {
   var members = parseArr(c.membersJson);
   var polimgs = parseArr(c.policyImages);
@@ -191,23 +197,30 @@ function showCand(c) {
     ? '<img src="' + esc(c.photoUrl) + '" style="width:100%;max-width:260px;border-radius:10px;margin:0 auto 16px;display:block">'
     : '';
 
-  /* ทีมงาน: หัวหน้าทีมก่อน แล้วต่อด้วยสมาชิกพร้อมรูป */
-  var team = '';
-  var leadAva = c.leaderPhoto ? ' style="background-image:url(&quot;' + esc(c.leaderPhoto) + '&quot;)"' : '';
-  team += '<div class="team-member lead"><div class="tm-ava"' + leadAva + '></div>' +
-    '<div class="tm-name">' + esc(c.leader || '-') + '</div>' +
-    '<div class="tm-room">' + esc(c.leaderRoom || '') + '</div>' +
-    '<div class="tm-badge">หัวหน้าทีม</div></div>';
+  /* การ์ดหัวหน้าทีม เด่นเต็มแถว */
+  var leadInner = c.leaderPhoto
+    ? ' style="background-image:url(&quot;' + esc(c.leaderPhoto) + '&quot;)"><'
+    : '>' + esc(initial(c.leader)) + '<';
+  var leadBanner = '<div class="team-lead"><div class="tl-ava"' + leadInner + '/div>' +
+    '<div class="tl-info"><span class="tl-badge">★ หัวหน้าทีม</span>' +
+    '<div class="tl-name">' + esc(c.leader || '-') + '</div>' +
+    '<div class="tl-room">' + esc(c.leaderRoom || '') + '</div></div></div>';
+
+  /* การ์ดสมาชิก */
+  var grid = '';
   for (var i = 0; i < members.length; i++) {
     var m = members[i];
-    var ava = m.photo ? ' style="background-image:url(&quot;' + esc(m.photo) + '&quot;)"' : '';
-    team += '<div class="team-member"><div class="tm-ava"' + ava + '></div>' +
-      '<div class="tm-name">' + esc(m.name || '') + '</div>' +
-      '<div class="tm-room">' + esc(m.room || '') + '</div></div>';
+    var inner = m.photo
+      ? ' style="background-image:url(&quot;' + esc(m.photo) + '&quot;)"><'
+      : '>' + esc(initial(m.name)) + '<';
+    grid += '<div class="team-member"><div class="tm-ava"' + inner + '/div>' +
+      '<div class="tm-name">' + esc(m.name || '-') + '</div>' +
+      (m.room ? '<div class="tm-room">' + esc(m.room) + '</div>' : '') + '</div>';
   }
-  var teamBlock = '<div class="team-grid">' + team + '</div>';
+  var gridBlock = grid ? '<div class="team-sec-lbl">สมาชิกทีม ' + members.length + ' คน</div><div class="team-grid">' + grid + '</div>' : '';
+  var teamBlock = '<div class="team-wrap">' + leadBanner + gridBlock + '</div>';
 
-  var memoText = c.members ? '<p class="muted" style="text-align:center;margin:0 0 4px">' + esc(c.members) + '</p>' : '';
+  var memoText = c.members ? '<p class="muted" style="text-align:center;margin:10px 0 2px">' + esc(c.members) + '</p>' : '';
   var policyText = c.policy ? '<p style="text-align:left;margin-top:14px"><b>นโยบาย</b><br>' + esc(c.policy) + '</p>' : '';
 
   var gallery = '';
