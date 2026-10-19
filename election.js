@@ -108,6 +108,7 @@ var SCHOOL_LOGO = 'https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png';
 
 var PAGES = [
   { f: 'index.html',  t: 'หน้าหลัก',      s: 'ข้อมูลสำหรับทุกคน' },
+  { f: 'stats.html',  t: 'ผลและสถิติ',    s: 'ผลคะแนนและย้อนหลัง' },
   { f: 'live.html',   t: 'จอแสดงผล',      s: 'ฉายที่หอประชุม' },
   { f: 'booth.html',  t: 'คูหา',          s: 'สแกนบัตร ตรวจใบหน้า' },
   { f: 'enroll.html', t: 'ลงทะเบียนใบหน้า', s: 'ทำก่อนวันเลือกตั้ง' },
