@@ -61,19 +61,13 @@
       <div class="card reveal">
         <h3 style="margin-bottom:10px">คะแนนขณะนี้</h3>
         <p class="muted" style="margin-bottom:12px">เห็นได้เฉพาะผู้ดูแลระบบ หน้าสาธารณะยังถูกล็อกอยู่</p>
-        <div class="mini"><span>หมายเลข 1 ละลมก้าวหน้า</span><b>118</b></div>
-        <div class="mini"><span>หมายเลข 2 รวมใจบ้านละลม</span><b>96</b></div>
-        <div class="mini"><span>หมายเลข 3 เพื่อนพัฒนา</span><b>47</b></div>
-        <div class="mini"><span>บัตรเสีย</span><b>7</b></div>
+        <div id="liveScore"><div class="mini"><span class="muted">กำลังโหลด…</span><b></b></div></div>
       </div>
 
       <div class="card reveal">
         <h3 style="margin-bottom:10px">การใช้สิทธิ์รายชั้น</h3>
         <p class="muted" style="margin-bottom:12px">ชั้นที่ยังต่ำกว่า 60% ควรให้ครูประจำชั้นตามนักเรียนมาใช้สิทธิ์</p>
-        <div class="mini"><span>ม.3</span><b style="color:var(--stamp)">37%</b></div>
-        <div class="mini"><span>ป.5</span><b style="color:var(--amber)">60%</b></div>
-        <div class="mini"><span>ม.1</span><b style="color:var(--amber)">52%</b></div>
-        <div class="mini"><span>ป.4</span><b style="color:var(--verify)">87%</b></div>
+        <div id="liveGrade"><div class="mini"><span class="muted">กำลังโหลด…</span><b></b></div></div>
       </div>
     </div>
   </section>
@@ -226,9 +220,38 @@
             <div class="field"><label>หัวหน้าทีม</label><input id="cLeader" type="text" placeholder="ปาลิตา สุขประเสริฐ"></div>
             <div class="field"><label>ห้องหัวหน้าทีม</label><input id="cRoom" type="text" placeholder="ม.3/1"></div>
           </div>
-          <div class="field"><label>สมาชิกทีม</label><input id="cMembers" type="text" placeholder="สมาชิกทีม 8 คน"></div>
-          <div class="field"><label>นโยบาย</label><input id="cPolicy" type="text" placeholder="ขยายเวลาห้องสมุด ตั้งชมรม..."></div>
+          <div class="field"><label>คำโปรยทีม (ข้อความสั้น)</label><input id="cMembers" type="text" placeholder="เช่น ทีมพร้อมลุย 8 คน"></div>
+          <div class="field"><label>นโยบาย (ข้อความ)</label><input id="cPolicy" type="text" placeholder="ขยายเวลาห้องสมุด ตั้งชมรม..."></div>
           <div class="field"><label>ลิงก์คลิปแนะนำ (ถ้ามี)</label><input id="cClip" type="url" placeholder="https://..."></div>
+        </div>
+      </div>
+
+      <div class="cand-extra">
+        <div class="field">
+          <label>รูปโปรไฟล์หัวหน้าทีม (ถ้ามี)</label>
+          <div class="lead-photo-row">
+            <div class="avatar-box" id="leadAvatar"><span>ไม่มีรูป</span></div>
+            <button class="btn sm ghost" type="button" id="leadPhotoBtn">อัปโหลดรูปหัวหน้า</button>
+            <button class="btn sm ghost" type="button" id="leadPhotoClr" style="display:none">เอาออก</button>
+          </div>
+          <input type="file" id="leadPhotoFile" accept="image/png,image/jpeg,image/webp" style="display:none">
+          <input id="cLeaderPhoto" type="hidden">
+        </div>
+
+        <div class="field">
+          <label>สมาชิกทีม (ใส่รูปโปรไฟล์รายคนได้)</label>
+          <div id="memList" class="mem-list"></div>
+          <button class="btn sm ghost" type="button" id="memAdd">+ เพิ่มสมาชิก</button>
+          <input type="file" id="memPhotoFile" accept="image/png,image/jpeg,image/webp" style="display:none">
+          <input id="cMembersJson" type="hidden">
+        </div>
+
+        <div class="field">
+          <label>รูปรายละเอียดนโยบาย (เพิ่มได้หลายรูป)</label>
+          <div id="polImgs" class="pol-imgs"></div>
+          <button class="btn sm ghost" type="button" id="polImgAdd">+ เพิ่มรูปนโยบาย</button>
+          <input type="file" id="polImgFile" accept="image/png,image/jpeg,image/webp" style="display:none">
+          <input id="cPolicyImages" type="hidden">
         </div>
       </div>
 
@@ -383,6 +406,8 @@ var cur = 1;
 var phs = document.querySelectorAll('.ph');
 var names = ['เตรียมการ', 'เปิดหีบ', 'ปิดหีบ', 'ประกาศผล'];
 
+var CANDMAP = {};   /* หมายเลข -> ชื่อพรรค ใช้แสดงการ์ดคะแนน */
+
 /* ดึงสถิติจริงจาก backend */
 function loadStats() {
   API.call('live', {}, function (data) {
@@ -395,11 +420,68 @@ function loadStats() {
     var doc = document.querySelector('.doc-no');
     if (doc) { doc.innerHTML = 'ปีการศึกษา ' + (CUR_YEAR || '—') + '<br>ผู้มีสิทธิ์ ' + fmt(total) + ' คน'; }
 
+    renderGrade(data.byGrade || {});
+
     if (data.status && STATUS_TO_STEP[data.status] !== undefined) {
       cur = STATUS_TO_STEP[data.status];
       repaint();
     }
   }, function () {});
+  loadScore();
+}
+
+/* การใช้สิทธิ์รายชั้น เรียงจากต่ำสุดขึ้นก่อน ให้ครูตามห้องที่ยังมาน้อย */
+function renderGrade(byGrade) {
+  var box = document.getElementById('liveGrade');
+  if (!box) { return; }
+  var arr = [], g;
+  for (g in byGrade) {
+    if (!byGrade.hasOwnProperty(g)) { continue; }
+    var o = byGrade[g];
+    var pct = o.total > 0 ? Math.round(o.voted / o.total * 100) : 0;
+    arr.push({ g: g, pct: pct, voted: o.voted, total: o.total });
+  }
+  if (!arr.length) {
+    box.innerHTML = '<div class="mini"><span class="muted">ยังไม่มีข้อมูลผู้มีสิทธิ์</span><b></b></div>';
+    return;
+  }
+  arr.sort(function (a, b) { return a.pct - b.pct; });
+  var html = '';
+  for (var i = 0; i < arr.length; i++) {
+    var col = arr[i].pct >= 80 ? 'var(--verify)' : (arr[i].pct >= 60 ? 'var(--amber)' : 'var(--stamp)');
+    html += '<div class="mini"><span>' + esc(arr[i].g) +
+      ' <span class="muted" style="font-size:.76rem">(' + arr[i].voted + '/' + arr[i].total + ')</span></span>' +
+      '<b style="color:' + col + '">' + arr[i].pct + '%</b></div>';
+  }
+  box.innerHTML = html;
+}
+
+/* คะแนนรายเบอร์แบบส่วนตัว ดึงจาก backend (adminTally) ไม่มีข้อมูลค้าง */
+function loadScore() {
+  var box = document.getElementById('liveScore');
+  if (!box) { return; }
+  API.call('adminTally', {}, function (data) {
+    var tally = data.tally || {}, keys = {}, k, n;
+    for (n in CANDMAP) { if (CANDMAP.hasOwnProperty(n)) { keys[n] = true; } }
+    for (k in tally) { if (tally.hasOwnProperty(k) && k !== '0') { keys[k] = true; } }
+    var order = [];
+    for (k in keys) { if (keys.hasOwnProperty(k)) { order.push(k); } }
+    order.sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
+    if (!order.length) {
+      box.innerHTML = '<div class="mini"><span class="muted">ยังไม่มีผู้สมัคร</span><b></b></div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < order.length; i++) {
+      var no = order[i];
+      var name = CANDMAP[no] ? ('หมายเลข ' + no + ' ' + CANDMAP[no]) : ('หมายเลข ' + no);
+      html += '<div class="mini"><span>' + esc(name) + '</span><b>' + (tally[no] || 0) + '</b></div>';
+    }
+    html += '<div class="mini"><span>บัตรเสีย</span><b>' + (tally['0'] || 0) + '</b></div>';
+    box.innerHTML = html;
+  }, function () {
+    box.innerHTML = '<div class="mini"><span class="muted">ยังไม่มีคะแนน (ยังไม่เปิดหีบ หรือยังไม่มีผู้ลงคะแนน)</span><b></b></div>';
+  });
 }
 
 var CUR_YEAR = '';
@@ -542,6 +624,12 @@ document.getElementById('qr2').onclick = function () {
 function loadCandidates() {
   API.call('listCandidates', {}, function (data) {
     var box = document.getElementById('candList');
+    /* อัปเดตตารางหมายเลข->ชื่อพรรค แล้วรีเฟรชการ์ดคะแนนให้ขึ้นชื่อจริง */
+    CANDMAP = {};
+    for (var m = 0; m < data.candidates.length; m++) {
+      CANDMAP[String(data.candidates[m].no)] = data.candidates[m].party;
+    }
+    loadScore();
     if (!data.candidates.length) {
       box.innerHTML = '<p class="muted">ยังไม่มีผู้สมัคร เพิ่มด้านล่างได้เลย</p>';
       return;
@@ -583,15 +671,26 @@ function fillCandForm(c) {
   document.getElementById('cPhoto').value = c.photoUrl;
   document.getElementById('cClip').value = c.clipUrl;
   setPoster(c.photoUrl);
+  /* ฟิลด์รูปหัวหน้า/สมาชิก/นโยบาย */
+  setLeadPhoto(c.leaderPhoto || '');
+  MEMBERS = parseJsonArr(c.membersJson);
+  POLIMGS = parseJsonArr(c.policyImages);
+  renderMembers();
+  renderPolImgs();
   document.getElementById('candFormTitle').textContent = 'แก้ไขผู้สมัครเบอร์ ' + c.no;
   document.getElementById('cNo').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function clearCandForm() {
-  ['cNo', 'cParty', 'cLeader', 'cRoom', 'cMembers', 'cPolicy', 'cPhoto', 'cClip'].forEach(function (id) {
+  ['cNo', 'cParty', 'cLeader', 'cRoom', 'cMembers', 'cPolicy', 'cPhoto', 'cClip', 'cLeaderPhoto'].forEach(function (id) {
     document.getElementById(id).value = '';
   });
   setPoster('');
+  setLeadPhoto('');
+  MEMBERS = [];
+  POLIMGS = [];
+  renderMembers();
+  renderPolImgs();
   document.getElementById('candFormTitle').textContent = 'เพิ่มผู้สมัครใหม่';
 }
 
@@ -655,10 +754,148 @@ document.getElementById('posterLinkBtn').onclick = function () {
   });
 };
 
+/* ---- รูปหัวหน้าทีม / สมาชิก / รูปนโยบาย ---- */
+var MEMBERS = [];       /* [{name, room, photo}] */
+var POLIMGS = [];       /* [url, ...] */
+var memUploadIdx = -1;
+
+/* อ่าน JSON เป็น array อย่างปลอดภัย คืน [] ถ้าว่างหรือผิดรูป */
+function parseJsonArr(s) {
+  if (!s) { return []; }
+  try { var v = JSON.parse(s); return (v && v.length) ? v : []; } catch (e) { return []; }
+}
+
+/* อัปโหลดรูปขึ้นไดรฟ์ คืน url ผ่าน cb (รีไซเคิล endpoint uploadPhoto เดิม) */
+function uploadImage(file, sub, cb) {
+  if (!file) { return; }
+  if (['image/png', 'image/jpeg', 'image/webp'].indexOf(file.type) < 0) {
+    Swal.fire({ icon: 'error', title: 'ชนิดไฟล์ไม่รองรับ', text: 'รับเฉพาะ PNG JPG WEBP', confirmButtonText: 'ปิด' });
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    Swal.fire({ icon: 'error', title: 'ไฟล์ใหญ่เกินไป', text: 'ไฟล์ต้องไม่เกิน 5 MB', confirmButtonText: 'ปิด' });
+    return;
+  }
+  var mime = file.type, fname = file.name;
+  fileToBase64(file, function (b64) {
+    showLoading('กำลังอัปโหลดรูป', sub || 'เก็บลงไดรฟ์');
+    API.call('uploadPhoto', { base64: b64, mimeType: mime, fileName: fname }, function (res) {
+      Swal.close();
+      cb(res.url);
+    }, function (msg) {
+      Swal.fire({ icon: 'error', title: 'อัปโหลดไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  }, function (m) { toastError(m); });
+}
+
+function setLeadPhoto(url) {
+  document.getElementById('cLeaderPhoto').value = url || '';
+  var box = document.getElementById('leadAvatar');
+  var clr = document.getElementById('leadPhotoClr');
+  if (url) { box.style.backgroundImage = 'url("' + url + '")'; box.innerHTML = ''; clr.style.display = ''; }
+  else { box.style.backgroundImage = ''; box.innerHTML = '<span>ไม่มีรูป</span>'; clr.style.display = 'none'; }
+}
+document.getElementById('leadPhotoBtn').onclick = function () { document.getElementById('leadPhotoFile').click(); };
+document.getElementById('leadPhotoClr').onclick = function () { setLeadPhoto(''); };
+document.getElementById('leadPhotoFile').onchange = function () {
+  var f = this.files && this.files[0];
+  this.value = '';
+  uploadImage(f, 'รูปโปรไฟล์หัวหน้าทีม', function (url) { setLeadPhoto(url); });
+};
+
+function syncMembersFromInputs() {
+  var rows = document.querySelectorAll('#memList .mem-row');
+  for (var i = 0; i < rows.length; i++) {
+    var idx = parseInt(rows[i].getAttribute('data-i'), 10);
+    if (!MEMBERS[idx]) { continue; }
+    MEMBERS[idx].name = rows[i].querySelector('.mem-name').value;
+    MEMBERS[idx].room = rows[i].querySelector('.mem-room').value;
+  }
+}
+function renderMembers() {
+  var box = document.getElementById('memList'), i;
+  var html = '';
+  for (i = 0; i < MEMBERS.length; i++) {
+    html += '<div class="mem-row" data-i="' + i + '">' +
+      '<div class="mem-ava" data-ava="' + i + '" title="ใส่/เปลี่ยนรูป"><small>ใส่รูป</small></div>' +
+      '<input class="mem-name" type="text" placeholder="ชื่อ-นามสกุล" value="' + esc(MEMBERS[i].name || '') + '">' +
+      '<input class="mem-room" type="text" placeholder="ชั้น เช่น ม.2/1" value="' + esc(MEMBERS[i].room || '') + '">' +
+      '<button class="mem-del" type="button" data-del="' + i + '" title="ลบสมาชิก">&times;</button></div>';
+  }
+  box.innerHTML = html;
+  var rows = box.querySelectorAll('.mem-row');
+  for (i = 0; i < rows.length; i++) {
+    var idx = parseInt(rows[i].getAttribute('data-i'), 10);
+    var av = rows[i].querySelector('.mem-ava');
+    if (MEMBERS[idx] && MEMBERS[idx].photo) { av.style.backgroundImage = 'url("' + MEMBERS[idx].photo + '")'; av.innerHTML = ''; }
+    av.onclick = function () {
+      syncMembersFromInputs();
+      memUploadIdx = parseInt(this.getAttribute('data-ava'), 10);
+      document.getElementById('memPhotoFile').click();
+    };
+  }
+  var dels = box.querySelectorAll('.mem-del');
+  for (i = 0; i < dels.length; i++) {
+    dels[i].onclick = function () {
+      syncMembersFromInputs();
+      MEMBERS.splice(parseInt(this.getAttribute('data-del'), 10), 1);
+      renderMembers();
+    };
+  }
+}
+document.getElementById('memAdd').onclick = function () {
+  syncMembersFromInputs();
+  MEMBERS.push({ name: '', room: '', photo: '' });
+  renderMembers();
+};
+document.getElementById('memPhotoFile').onchange = function () {
+  var f = this.files && this.files[0];
+  this.value = '';
+  var idx = memUploadIdx;
+  uploadImage(f, 'รูปโปรไฟล์สมาชิก', function (url) {
+    if (MEMBERS[idx]) { MEMBERS[idx].photo = url; renderMembers(); }
+  });
+};
+
+function renderPolImgs() {
+  var box = document.getElementById('polImgs'), i;
+  var html = '';
+  for (i = 0; i < POLIMGS.length; i++) {
+    html += '<div class="pol-thumb" data-i="' + i + '"><button type="button" data-del="' + i + '" title="ลบรูป">&times;</button></div>';
+  }
+  box.innerHTML = html;
+  var thumbs = box.querySelectorAll('.pol-thumb');
+  for (i = 0; i < thumbs.length; i++) {
+    var idx = parseInt(thumbs[i].getAttribute('data-i'), 10);
+    thumbs[i].style.backgroundImage = 'url("' + POLIMGS[idx] + '")';
+  }
+  var dels = box.querySelectorAll('[data-del]');
+  for (i = 0; i < dels.length; i++) {
+    dels[i].onclick = function () {
+      POLIMGS.splice(parseInt(this.getAttribute('data-del'), 10), 1);
+      renderPolImgs();
+    };
+  }
+}
+document.getElementById('polImgAdd').onclick = function () { document.getElementById('polImgFile').click(); };
+document.getElementById('polImgFile').onchange = function () {
+  var f = this.files && this.files[0];
+  this.value = '';
+  uploadImage(f, 'รูปรายละเอียดนโยบาย', function (url) { POLIMGS.push(url); renderPolImgs(); });
+};
+
 document.getElementById('cClear').onclick = clearCandForm;
 
 document.getElementById('cSave').onclick = function () {
   var btn = this;
+  syncMembersFromInputs();
+  /* ตัดสมาชิกที่ไม่มีชื่อออก */
+  var cleanMem = [];
+  for (var mi = 0; mi < MEMBERS.length; mi++) {
+    if (String(MEMBERS[mi].name || '').trim() || MEMBERS[mi].photo) {
+      cleanMem.push({ name: String(MEMBERS[mi].name || '').trim(), room: String(MEMBERS[mi].room || '').trim(), photo: MEMBERS[mi].photo || '' });
+    }
+  }
   var payload = {
     no: document.getElementById('cNo').value.trim(),
     party: document.getElementById('cParty').value.trim(),
@@ -667,7 +904,10 @@ document.getElementById('cSave').onclick = function () {
     members: document.getElementById('cMembers').value.trim(),
     policy: document.getElementById('cPolicy').value.trim(),
     photoUrl: document.getElementById('cPhoto').value.trim(),
-    clipUrl: document.getElementById('cClip').value.trim()
+    clipUrl: document.getElementById('cClip').value.trim(),
+    leaderPhoto: document.getElementById('cLeaderPhoto').value.trim(),
+    membersJson: cleanMem.length ? JSON.stringify(cleanMem) : '',
+    policyImages: POLIMGS.length ? JSON.stringify(POLIMGS) : ''
   };
   if (!payload.no || !payload.party) {
     Swal.fire({ icon: 'warning', title: 'กรอกไม่ครบ', text: 'ต้องมีอย่างน้อยหมายเลขและชื่อพรรค', confirmButtonText: 'ปิด' });
