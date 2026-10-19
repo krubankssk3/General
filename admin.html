@@ -38,7 +38,7 @@
   <section style="padding-top:28px" class="reveal">
     <span class="eyebrow">สถานะการเลือกตั้ง</span>
     <h2>ขณะนี้อยู่ในขั้นเปิดหีบ</h2>
-    <p class="lead" style="margin-bottom:20px">กดเพื่อเปลี่ยนขั้น ระบบจะไม่ให้ข้ามขั้นและถอยกลับไม่ได้ ทุกการเปลี่ยนขั้นถูกบันทึกพร้อมชื่อผู้กด</p>
+    <p class="lead" style="margin-bottom:20px">กดเพื่อเปลี่ยนขั้น ระบบจะไม่ให้ข้ามขั้น แต่ผู้ดูแลระบบย้อนกลับไปขั้นก่อนหน้าได้หากเผลอกดเดินหน้าเกิน ทุกการเปลี่ยนขั้นถูกบันทึกพร้อมชื่อผู้กด</p>
 
     <div class="phase" id="phase">
       <button class="ph past" data-i="0"><div class="step">ขั้นที่ 01</div><strong>เตรียมการ</strong><span>เพิ่มผู้สมัคร นำเข้าผู้มีสิทธิ์</span></button>
@@ -312,13 +312,18 @@
     <div class="grid g2" style="margin-top:20px" id="demoTools">
       <div class="card reveal">
         <h3>ใส่ข้อมูลจำลอง</h3>
-        <p class="muted" style="margin-bottom:14px">สร้างนักเรียนปลอม 412 คน ผู้สมัคร 3 ทีม บัตร 268 ใบ และบัญชีทดสอบ เพื่อทดลองระบบ</p>
+        <p class="muted" style="margin-bottom:14px">สร้างนักเรียน ผู้สมัคร บัตร และบัญชีทดสอบชุดจำลอง เพื่อทดลองระบบทั้งวงจรก่อนใช้งานจริง</p>
         <button class="btn wide ghost" id="seedDemo">ใส่ข้อมูลจำลอง</button>
       </div>
+      <div class="card reveal">
+        <h3 style="color:var(--amber)">ล้างเฉพาะข้อมูลจำลอง</h3>
+        <p class="muted" style="margin-bottom:14px">ลบเฉพาะชุดข้อมูลทดสอบ (นักเรียน/ผู้สมัคร/บัญชี จำลอง) เก็บข้อมูลจริงที่ใส่ไว้ และบัญชีแอดมินหลัก</p>
+        <button class="btn wide ghost" id="clearDemo">ล้างข้อมูลจำลอง</button>
+      </div>
       <div class="card reveal" style="border-color:var(--border-danger, #E5B4BE)">
-        <h3 style="color:var(--stamp)">ล้างข้อมูลจำลอง</h3>
-        <p class="muted" style="margin-bottom:14px">ลบข้อมูลทุกชีตให้เหลือหัวคอลัมน์ ทำก่อนใส่ข้อมูลจริง เรียกคืนไม่ได้</p>
-        <button class="btn wide danger" id="clearDemo">ล้างข้อมูลทั้งหมด</button>
+        <h3 style="color:var(--stamp)">ล้างข้อมูลจริงทั้งหมด</h3>
+        <p class="muted" style="margin-bottom:14px">ลบข้อมูลทุกชีตให้เหลือหัวคอลัมน์ (รวมข้อมูลจริง) เหลือเฉพาะบัญชีแอดมินหลัก ใช้ตอนเริ่มการเลือกตั้งใหม่ เรียกคืนไม่ได้</p>
+        <button class="btn wide danger" id="clearAll">ล้างข้อมูลจริงทั้งหมด</button>
       </div>
     </div>
   </section>
@@ -330,12 +335,7 @@
       <table>
         <thead><tr><th>เวลา</th><th>ผู้กระทำ</th><th>การกระทำ</th><th>ผล</th></tr></thead>
         <tbody>
-          <tr><td class="mono">10:42:07</td><td>unit01</td><td>ยืนยันตัวตนแทนระบบ — เหตุผล แสงย้อน</td><td><span class="tag warn">ยืนยันแทน</span></td></tr>
-          <tr><td class="mono">10:41:55</td><td>ระบบ</td><td>ตรวจใบหน้า ค่าความเหมือน 61.4%</td><td><span class="tag bad">ไม่ผ่าน</span></td></tr>
-          <tr><td class="mono">10:38:12</td><td>unit01</td><td>ออกรหัสเข้าคูหา อายุ 3 นาที</td><td><span class="tag ok">สำเร็จ</span></td></tr>
-          <tr><td class="mono">10:37:44</td><td>ระบบ</td><td>บันทึกบัตร BL69-K7QM2XPD</td><td><span class="tag ok">สำเร็จ</span></td></tr>
-          <tr><td class="mono">09:15:03</td><td>krubank</td><td>เปลี่ยนสถานะเป็น เปิดหีบ</td><td><span class="tag ok">สำเร็จ</span></td></tr>
-          <tr><td class="mono">08:52:31</td><td>observer</td><td>พยายามเข้าสู่ระบบ รหัสผ่านผิด</td><td><span class="tag bad">ไม่ผ่าน</span></td></tr>
+          <tr><td colspan="4" class="muted">ทุกการกระทำในระบบถูกบันทึกไว้ในชีต <b>AuditLog</b> บนสเปรดชีต (เวลา · ผู้กระทำ · การกระทำ · ผล) เปิดดูย้อนหลังได้ที่นั่น</td></tr>
         </tbody>
       </table>
     </div>
@@ -478,12 +478,28 @@ for (var i = 0; i < phs.length; i++) {
   phs[i].onclick = function () {
     var want = parseInt(this.getAttribute('data-i'), 10);
 
-    if (want <= cur) {
+    if (want === cur) { return; }
+
+    /* ย้อนกลับ (เฉพาะผู้ดูแลระบบ) ใช้กรณีเผลอกดเดินหน้าเกิน */
+    if (want < cur) {
+      var warnReopen = (want < 2 && cur >= 2)
+        ? '<b style="color:var(--stamp)">ระวัง: ย้อนจากหลังปิดหีบ จะกลับไปเปิดรับลงคะแนนอีกครั้ง</b><br>' : '';
       Swal.fire({
-        icon: 'error',
-        title: 'ถอยกลับไม่ได้',
-        text: 'ขั้นการเลือกตั้งเดินหน้าอย่างเดียว หากตั้งค่าผิดต้องเริ่มการเลือกตั้งใหม่ทั้งชุด',
-        confirmButtonText: 'เข้าใจแล้ว'
+        icon: 'warning',
+        title: 'ย้อนกลับไปขั้น ' + names[want] + '?',
+        html: 'ใช้เฉพาะกรณีเผลอกดเดินหน้าเกิน<br>' + warnReopen + 'พิมพ์คำว่า <b>ย้อนกลับ</b> เพื่อยืนยัน',
+        input: 'text',
+        inputPlaceholder: 'พิมพ์ ย้อนกลับ',
+        showCancelButton: true,
+        confirmButtonText: 'ย้อนกลับ',
+        cancelButtonText: 'ยกเลิก',
+        reverseButtons: true,
+        preConfirm: function (v) {
+          if (v !== 'ย้อนกลับ') { Swal.showValidationMessage('พิมพ์ให้ตรงคำว่า ย้อนกลับ'); }
+          return v;
+        }
+      }).then(function (r) {
+        if (r.isConfirmed) { goBack(want); }
       });
       return;
     }
@@ -502,7 +518,7 @@ for (var i = 0; i < phs.length; i++) {
       Swal.fire({
         icon: 'warning',
         title: 'ยืนยันการปิดหีบ',
-        html: 'ยังมีนักเรียน <b>144 คน</b> ที่ยังไม่มาใช้สิทธิ์<br>ปิดหีบแล้วจะไม่รับลงคะแนนอีก และเปิดใหม่ไม่ได้<br><br>พิมพ์คำว่า <b>ปิดหีบ</b> เพื่อยืนยัน',
+        html: 'ปิดหีบแล้วจะไม่รับลงคะแนนอีก (ถ้าเผลอ ผู้ดูแลระบบย้อนกลับได้)<br><br>พิมพ์คำว่า <b>ปิดหีบ</b> เพื่อยืนยัน',
         input: 'text',
         inputPlaceholder: 'พิมพ์ ปิดหีบ',
         showCancelButton: true,
@@ -549,6 +565,19 @@ function advance(n) {
     });
   }, function (msg) {
     Swal.fire({ icon: 'error', title: 'เปลี่ยนสถานะไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+  });
+}
+
+/* ย้อนขั้นตอนกลับ (เฉพาะผู้ดูแลระบบ) */
+function goBack(n) {
+  showLoading('กำลังย้อนขั้นตอน', 'อัปเดตสถานะการเลือกตั้ง');
+  API.call('setStatusBack', { to: STEP_TO_STATUS[n] }, function () {
+    cur = n;
+    repaint();
+    loadStats();
+    Swal.fire({ icon: 'success', title: 'ย้อนกลับไปขั้น ' + names[n] + 'แล้ว', timer: 2000, showConfirmButton: false });
+  }, function (msg) {
+    Swal.fire({ icon: 'error', title: 'ย้อนขั้นตอนไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
   });
 }
 
@@ -1160,26 +1189,52 @@ document.getElementById('seedDemo').onclick = function () {
   });
 };
 
+/* ล้างเฉพาะข้อมูลจำลอง เก็บข้อมูลจริงไว้ */
 document.getElementById('clearDemo').onclick = function () {
   var btn = this;
   Swal.fire({
     icon: 'warning',
-    title: 'ล้างข้อมูลทั้งหมด?',
-    html: 'ลบนักเรียน บัตร ผู้สมัคร และบัญชีทั้งหมด เหลือแต่หัวคอลัมน์<br><b style="color:var(--stamp)">เรียกคืนไม่ได้</b><br><br>พิมพ์คำว่า <b>ล้าง</b> เพื่อยืนยัน',
-    input: 'text',
-    inputPlaceholder: 'พิมพ์ ล้าง',
-    showCancelButton: true, confirmButtonText: 'ล้างเดี๋ยวนี้', cancelButtonText: 'ยกเลิก', reverseButtons: true,
-    preConfirm: function (v) { if (v !== 'ล้าง') { Swal.showValidationMessage('พิมพ์ให้ตรงคำว่า ล้าง'); } return v; }
+    title: 'ล้างเฉพาะข้อมูลจำลอง?',
+    html: 'ลบเฉพาะชุดข้อมูลทดสอบ เก็บข้อมูลจริงและบัญชีแอดมินหลักไว้',
+    showCancelButton: true, confirmButtonText: 'ล้างข้อมูลจำลอง', cancelButtonText: 'ยกเลิก', reverseButtons: true
   }).then(function (r) {
     if (!r.isConfirmed) { return; }
     if (!lockBtn(btn, 'กำลังล้าง…')) { return; }
-    showLoading('กำลังล้างข้อมูล');
-    API.call('clearDemo', {}, function () {
+    showLoading('กำลังล้างข้อมูลจำลอง');
+    API.call('clearDemo', {}, function (res) {
       unlockBtn(btn);
       loadCandidates();
       loadAccounts();
       loadStats();
-      Swal.fire({ icon: 'success', title: 'ล้างข้อมูลแล้ว', html: 'ระบบพร้อมรับข้อมูลจริง', confirmButtonText: 'ปิด' });
+      Swal.fire({ icon: 'success', title: 'ล้างข้อมูลจำลองแล้ว', html: (res && res.message) || 'เก็บข้อมูลจริงไว้', confirmButtonText: 'ปิด' });
+    }, function (msg) {
+      unlockBtn(btn);
+      Swal.fire({ icon: 'error', title: 'ล้างไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
+    });
+  });
+};
+
+/* ล้างข้อมูลจริงทั้งหมด (รีเซ็ต) — พิมพ์ยืนยัน */
+document.getElementById('clearAll').onclick = function () {
+  var btn = this;
+  Swal.fire({
+    icon: 'warning',
+    title: 'ล้างข้อมูลจริงทั้งหมด?',
+    html: 'ลบนักเรียน บัตร ผู้สมัคร และบัญชีทั้งหมด (รวมข้อมูลจริง) เหลือเฉพาะบัญชีแอดมินหลัก<br><b style="color:var(--stamp)">เรียกคืนไม่ได้</b><br><br>พิมพ์คำว่า <b>ล้างทั้งหมด</b> เพื่อยืนยัน',
+    input: 'text',
+    inputPlaceholder: 'พิมพ์ ล้างทั้งหมด',
+    showCancelButton: true, confirmButtonText: 'ล้างทั้งหมดเดี๋ยวนี้', cancelButtonText: 'ยกเลิก', reverseButtons: true,
+    preConfirm: function (v) { if (v !== 'ล้างทั้งหมด') { Swal.showValidationMessage('พิมพ์ให้ตรงคำว่า ล้างทั้งหมด'); } return v; }
+  }).then(function (r) {
+    if (!r.isConfirmed) { return; }
+    if (!lockBtn(btn, 'กำลังล้าง…')) { return; }
+    showLoading('กำลังล้างข้อมูลทั้งหมด');
+    API.call('clearAll', {}, function (res) {
+      unlockBtn(btn);
+      loadCandidates();
+      loadAccounts();
+      loadStats();
+      Swal.fire({ icon: 'success', title: 'ล้างข้อมูลทั้งหมดแล้ว', html: (res && res.message) || 'ระบบพร้อมเริ่มใหม่', confirmButtonText: 'ปิด' });
     }, function (msg) {
       unlockBtn(btn);
       Swal.fire({ icon: 'error', title: 'ล้างไม่สำเร็จ', html: msg, confirmButtonText: 'ปิด' });
