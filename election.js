@@ -97,30 +97,46 @@ var Theme = {
     Theme.set('custom');
   },
 
+  /* รายการตัวแปรที่ธีม custom เข้าไปบังคับ ใช้ตอนล้างเมื่อสลับกลับ */
+  CUSTOM_VARS: ['--violet', '--violet-soft', '--sidebar', '--sidebar-hover',
+    '--sidebar-rule', '--sidebar-faint', '--screen-bg'],
+
   apply: function (name) {
     document.documentElement.setAttribute('data-theme', name);
-    var root = document.documentElement;
+    var root = document.documentElement, i;
     if (name === 'custom') {
+      /* กำหนดสีเอง: ไล่สีทั้งระบบจากสีหลักที่เลือก ไม่ใช่เปลี่ยนแค่ปุ่ม */
       var hex = Theme.getAccent();
       root.style.setProperty('--violet', hex);
       root.style.setProperty('--violet-soft', Theme.tint(hex, 0.12));
+      /* แถบเมนูซ้าย + จอฉาย ใช้เฉดเข้มของสีเดียวกัน ให้เป็นโทนเดียวทั้งระบบ */
+      root.style.setProperty('--sidebar', Theme.mix(hex, 0, 0.80));
+      root.style.setProperty('--sidebar-hover', Theme.mix(hex, 0, 0.70));
+      root.style.setProperty('--sidebar-rule', Theme.mix(hex, 0, 0.58));
+      root.style.setProperty('--sidebar-faint', Theme.mix(hex, 255, 0.60));
+      root.style.setProperty('--screen-bg', Theme.mix(hex, 0, 0.82));
     } else {
-      /* เลิกบังคับสีหลักเมื่อกลับไปธีมสำเร็จรูป */
-      root.style.removeProperty('--violet');
-      root.style.removeProperty('--violet-soft');
+      /* เลิกบังคับทุกตัวเมื่อกลับไปธีมสำเร็จรูป */
+      for (i = 0; i < Theme.CUSTOM_VARS.length; i++) {
+        root.style.removeProperty(Theme.CUSTOM_VARS[i]);
+      }
     }
   },
 
-  /* ผสมสีให้จางลงเป็นพื้นอ่อน (--violet-soft) */
-  tint: function (hex, alpha) {
+  /* ผสมสี hex เข้าหาค่าเป้าหมายต่อช่อง (0 = ดำ, 255 = ขาว) ตามสัดส่วน amt 0..1 */
+  mix: function (hex, target, amt) {
     var h = hex.replace('#', '');
     if (h.length === 3) { h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]; }
     var r = parseInt(h.substring(0, 2), 16);
     var g = parseInt(h.substring(2, 4), 16);
     var b = parseInt(h.substring(4, 6), 16);
-    /* ผสมกับขาวเพื่อให้ได้พื้นอ่อนทึบ อ่านตัวอักษรเข้มทับได้ */
-    var mix = function (c) { return Math.round(c + (255 - c) * (1 - alpha * 2.2)); };
-    return 'rgb(' + mix(r) + ',' + mix(g) + ',' + mix(b) + ')';
+    var m = function (c) { return Math.round(c + (target - c) * amt); };
+    return 'rgb(' + m(r) + ',' + m(g) + ',' + m(b) + ')';
+  },
+
+  /* ผสมกับขาวให้ได้พื้นอ่อนทึบ (--violet-soft) อ่านตัวอักษรเข้มทับได้ */
+  tint: function (hex, alpha) {
+    return Theme.mix(hex, 255, Math.max(0, Math.min(1, 1 - alpha * 2.2)));
   },
 
   paintButtons: function (name) {
@@ -312,39 +328,60 @@ function unlockBtn(btn) {
   if (l) { btn.textContent = l; }
 }
 
-/* ================= กล่องโหลดแบบหมุน (ใช้ร่วมทุกหน้า) ================= */
+/* ================= กล่องโหลด: โลโก้ในวงแหวนไตรรงค์หมุน (ใช้ร่วมทุกหน้า) ================= */
 
 function spinnerHtml() {
-  return '<div class="el-spin" aria-hidden="true">' +
-    '<svg viewBox="0 0 50 50" width="64" height="64">' +
-    '<circle cx="25" cy="25" r="20" fill="none" stroke="var(--violet-soft)" stroke-width="5"/>' +
-    '<circle cx="25" cy="25" r="20" fill="none" stroke="var(--violet)" stroke-width="5" ' +
-    'stroke-linecap="round" stroke-dasharray="90 150" transform="rotate(-90 25 25)"/>' +
-    '</svg></div>';
+  /* วงแหวนสามสีหมุนรอบตราโรงเรียนที่เต้นเป็นจังหวะ สื่อการเลือกตั้ง/ประชาธิปไตย */
+  return '<div class="el-loader" aria-hidden="true">' +
+    '<div class="el-loader-ring"></div>' +
+    '<div class="el-loader-core"></div>' +
+    '<div class="el-loader-ping"></div>' +
+    '</div>';
 }
 
-/* เปิดกล่องโหลดหมุน คืน promise ปิดด้วย Swal.close() */
+/* เปิดกล่องโหลด คืน promise ปิดด้วย Swal.close() */
 function showLoading(title, sub) {
   if (typeof Swal === 'undefined') { return; }
   Swal.fire({
-    title: title || 'กำลังโหลด',
-    html: spinnerHtml() + (sub ? '<div class="el-spin-sub">' + sub + '</div>' : ''),
+    title: title || 'กำลังดำเนินการ',
+    html: spinnerHtml() +
+      '<div class="el-loader-cap">' + (sub || 'โปรดรอสักครู่') +
+      '<span class="el-loader-dot">.</span><span class="el-loader-dot">.</span><span class="el-loader-dot">.</span></div>',
     showConfirmButton: false,
     allowOutsideClick: false,
-    allowEscapeKey: false
+    allowEscapeKey: false,
+    customClass: { popup: 'el-loading' }
   });
 }
 
-/* ฉีด CSS ของ spinner ครั้งเดียว */
+/* ฉีด CSS ของ loader ครั้งเดียว */
 (function injectSpinnerCss() {
   if (document.getElementById('el-spin-css')) { return; }
   var st = document.createElement('style');
   st.id = 'el-spin-css';
   st.textContent =
-    '.el-spin{display:flex;justify-content:center;padding:14px 0 6px}' +
-    '.el-spin svg{animation:el-rot 1s linear infinite}' +
-    '.el-spin-sub{font-family:"Bai Jamjuree",sans-serif;font-size:.9rem;color:var(--ink-soft);margin-top:6px}' +
-    '@keyframes el-rot{to{transform:rotate(360deg)}}';
+    '.el-loader{position:relative;width:112px;height:112px;margin:10px auto 2px}' +
+    '.el-loader-ring{position:absolute;inset:0;border-radius:50%;' +
+      'background:conic-gradient(from 0deg,var(--violet),var(--verify),var(--stamp),var(--amber),var(--violet));' +
+      '-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 10px),#000 calc(100% - 9px));' +
+      'mask:radial-gradient(farthest-side,transparent calc(100% - 10px),#000 calc(100% - 9px));' +
+      'animation:el-rot 1.15s linear infinite}' +
+    '.el-loader-ping{position:absolute;inset:4px;border-radius:50%;border:2px solid var(--violet);' +
+      'opacity:0;animation:el-ping 1.8s cubic-bezier(.2,.7,.4,1) infinite}' +
+    '.el-loader-core{position:absolute;inset:18px;border-radius:50%;background:#fff;' +
+      'background-image:var(--el-logo,none);background-size:70%;background-position:center;background-repeat:no-repeat;' +
+      'box-shadow:0 3px 12px rgba(20,16,42,.22);animation:el-beat 1.6s ease-in-out infinite}' +
+    '.el-loader-cap{text-align:center;font-family:"Bai Jamjuree",sans-serif;font-weight:500;' +
+      'color:var(--ink-soft);margin-top:12px;font-size:.96rem;letter-spacing:.01em}' +
+    '.el-loader-dot{animation:el-blink 1.4s infinite;opacity:.2}' +
+    '.el-loader-dot:nth-child(2){animation-delay:.2s}.el-loader-dot:nth-child(3){animation-delay:.4s}' +
+    '.swal2-popup.el-loading{padding-top:30px!important}' +
+    '.swal2-popup.el-loading::after{display:none}' +
+    '@keyframes el-rot{to{transform:rotate(360deg)}}' +
+    '@keyframes el-beat{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}' +
+    '@keyframes el-ping{0%{transform:scale(.7);opacity:.7}70%,100%{transform:scale(1.25);opacity:0}}' +
+    '@keyframes el-blink{0%,100%{opacity:.2}50%{opacity:1}}' +
+    '@media (prefers-reduced-motion:reduce){.el-loader-ring,.el-loader-core,.el-loader-ping,.el-loader-dot{animation:none}}';
   document.head.appendChild(st);
 })();
 
