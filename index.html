@@ -44,7 +44,7 @@
 
   <section>
     <span class="eyebrow reveal">ผู้สมัคร</span>
-    <h2 class="reveal">สามทีมที่ลงสมัครปีนี้</h2>
+    <h2 class="reveal" id="candHead">ทีมที่ลงสมัครปีนี้</h2>
     <div class="grid g3" style="margin-top:24px" id="cands">
       <p class="muted" id="candsLoading">กำลังโหลดรายชื่อผู้สมัคร…</p>
     </div>
@@ -160,7 +160,13 @@ function loadCands() {
   API.call('listCandidates', {}, function (data) {
     CAND = (data && data.candidates) ? data.candidates : [];
     var box = document.getElementById('cands');
-    if (!CAND.length) { box.innerHTML = '<p class="muted">ยังไม่มีผู้สมัคร</p>'; return; }
+    var head = document.getElementById('candHead');
+    if (!CAND.length) {
+      if (head) { head.textContent = 'ยังไม่มีทีมลงสมัคร'; }
+      box.innerHTML = '<p class="muted">ยังไม่มีผู้สมัคร</p>';
+      return;
+    }
+    if (head) { head.textContent = CAND.length + ' ทีมที่ลงสมัครปีนี้'; }
 
     var html = '';
     for (var i = 0; i < CAND.length; i++) {
